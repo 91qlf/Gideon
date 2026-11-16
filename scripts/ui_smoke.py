@@ -162,7 +162,13 @@ if tap_label("Réglages"):
     swipe_up(); time.sleep(2); shot("17-settings-scrolled")
 adb("shell", "cmd", "uimode", "night", "no"); time.sleep(4)
 shot("18-settings-light"); check("light mode")
+tap_label("Retour"); time.sleep(2)  # folded tab bar → unfold
 tap_label("À la une"); time.sleep(4); shot("19-feed-light"); check("feed light")
+
+app_log = adb("logcat", "-d", "-v", "brief", "Gideon:V", "*:S")
+with open(f"{OUT}/app-log.txt", "w") as f:
+    f.write(app_log)
+print("---- app log ----\n" + app_log[-3000:])
 
 errors = adb("logcat", "-d", "-v", "brief", "*:E")
 with open(f"{OUT}/errors.txt", "w") as f:

@@ -126,8 +126,8 @@ fun InlineTitleBar(title: String, listState: LazyListState, palette: Palette, to
             .graphicsLayer { this.alpha = alpha }
             .background(
                 Brush.verticalGradient(
-                    0f to palette.background.copy(alpha = 0.96f),
-                    0.65f to palette.background.copy(alpha = 0.85f),
+                    0f to palette.background,
+                    0.72f to palette.background.copy(alpha = 0.97f),
                     1f to palette.background.copy(alpha = 0f),
                 )
             ),

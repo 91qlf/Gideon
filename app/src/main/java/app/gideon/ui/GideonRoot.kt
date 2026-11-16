@@ -122,7 +122,10 @@ fun GideonRoot() {
     val lifecycleOwner = LocalLifecycleOwner.current
     val youTubePool = remember { YouTubePool(context, lifecycleOwner.lifecycle) }
     LaunchedEffect(Unit) {
-        delay(1200)
+        // Staggered so building the web engines never competes with the first frames.
+        delay(2500)
+        youTubePool.warmUp(1)
+        delay(1500)
         youTubePool.warmUp(2)
     }
     DisposableEffect(Unit) { onDispose { youTubePool.release() } }

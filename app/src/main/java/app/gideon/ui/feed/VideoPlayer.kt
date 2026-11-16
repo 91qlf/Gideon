@@ -174,6 +174,7 @@ class PooledYouTube internal constructor(val view: YouTubePlayerView) {
         }
 
         override fun onError(youTubePlayer: YouTubePlayer, error: PlayerConstants.PlayerError) {
+            android.util.Log.w("Gideon", "YouTube error $error for video $videoId")
             sink?.failed = true
         }
     }
@@ -374,6 +375,7 @@ fun NativeVideoLayer(item: NewsItem, active: Boolean, preload: Boolean, controll
             }
 
             override fun onPlayerError(error: PlaybackException) {
+                android.util.Log.w("Gideon", "ExoPlayer error ${error.errorCodeName} for $url")
                 controller.failed = true
             }
         }
