@@ -45,6 +45,21 @@ class ParserTest {
     }
 
     @Test
+    fun detectsDirectVideo() {
+        val xml = """<?xml version="1.0"?><rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/"><channel><title>V</title>
+<item><title>Clip</title><link>https://example.com/v1</link>
+<media:content url="https://cdn.example.com/v1.mp4?token=1" type="video/mp4" medium="video"/>
+<media:thumbnail url="https://cdn.example.com/v1.jpg"/></item>
+<item><title>Live</title><link>https://example.com/v2</link><enclosure url="https://cdn.example.com/v2/master.m3u8" type="application/x-mpegURL"/></item>
+</channel></rss>"""
+        val r = FeedParser.parse(xml.byteInputStream(), "https://example.com", FeedDef("test", "rss", "UNE", "u"), pub)
+        assertEquals("https://cdn.example.com/v1.mp4?token=1", r.items[0].streamUrl)
+        assertEquals("https://cdn.example.com/v1.jpg", r.items[0].imageUrl)
+        assertTrue(r.items[0].isVideo)
+        assertEquals("https://cdn.example.com/v2/master.m3u8", r.items[1].streamUrl)
+    }
+
+    @Test
     fun youtubeAtom() {
         val xml = """<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/" xmlns="http://www.w3.org/2005/Atom">

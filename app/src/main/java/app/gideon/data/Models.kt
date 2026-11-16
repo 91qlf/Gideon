@@ -17,8 +17,11 @@ data class NewsItem(
     val publishedAt: Long,
     val videoId: String? = null,
     val isShort: Boolean = false,
+    /** Direct video file (MP4 / HLS) published in the feed, played natively. */
+    val streamUrl: String? = null,
 ) {
-    val isVideo: Boolean get() = videoId != null
+    val isVideo: Boolean get() = videoId != null || streamUrl != null
+    val isYouTube: Boolean get() = videoId != null
     val categoryEnum: Category get() = Category.fromId(category)
     val groupKey: String get() = "$kind:$publisherId"
 }

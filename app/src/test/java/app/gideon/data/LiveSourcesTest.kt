@@ -25,8 +25,8 @@ class LiveSourcesTest {
             f to pool.submit(Callable { FeedFetcher.fetch(f, catalog.publisher(f.publisher)!!, 25) })
         }
         sb.appendLine("## Feeds")
-        sb.appendLine("| ok | publisher | kind | cat | http | items | img% | newest | channel/error | url |")
-        sb.appendLine("|---|---|---|---|---|---|---|---|---|---|")
+        sb.appendLine("| ok | publisher | kind | cat | http | items | img% | vid% | newest | channel/error | url |")
+        sb.appendLine("|---|---|---|---|---|---|---|---|---|---|---|")
         val samples = LinkedHashMap<String, MutableList<NewsItem>>()
         var ok = 0
         for ((f, job) in feedJobs) {
@@ -34,9 +34,10 @@ class LiveSourcesTest {
             val items = o.result?.items.orEmpty()
             if (items.isNotEmpty()) ok++
             val img = if (items.isEmpty()) 0 else items.count { it.imageUrl != null } * 100 / items.size
+            val vid = if (items.isEmpty()) 0 else items.count { it.streamUrl != null } * 100 / items.size
             val newest = items.maxOfOrNull { it.publishedAt }?.let { "${(now - it) / 3_600_000}h" } ?: "-"
             val info = (o.result?.channelTitle ?: o.error ?: "").replace("|", "/").take(50)
-            sb.appendLine("| ${if (items.isNotEmpty()) "OK" else "FAIL"} | ${f.publisher} | ${f.kind} | ${f.category} | ${o.httpCode} | ${items.size} | $img | $newest | $info | ${f.url} |")
+            sb.appendLine("| ${if (items.isNotEmpty()) "OK" else "FAIL"} | ${f.publisher} | ${f.kind} | ${f.category} | ${o.httpCode} | ${items.size} | $img | $vid | $newest | $info | ${f.url} |")
             if (items.isNotEmpty() && f.kind == SourceKind.RSS) {
                 val list = samples.getOrPut(f.publisher) { mutableListOf() }
                 if (list.isEmpty()) list.addAll(items.take(2))
@@ -44,6 +45,29 @@ class LiveSourcesTest {
         }
         sb.appendLine()
         sb.appendLine("FEEDS_OK $ok / ${catalog.feeds.size}")
+
+        // Candidate video feeds (not in the catalogue yet): do they publish playable files?
+        val candidatesFile = File("src/test/resources/video-candidates.json")
+        if (candidatesFile.exists()) {
+            val candidates = kotlinx.serialization.json.Json.decodeFromString(
+                kotlinx.serialization.builtins.ListSerializer(FeedDef.serializer()), candidatesFile.readText()
+            )
+            sb.appendLine()
+            sb.appendLine("## Video candidates")
+            sb.appendLine("| publisher | http | items | vid% | sample stream | url |")
+            sb.appendLine("|---|---|---|---|---|---|")
+            val jobs = candidates.map { f ->
+                val pub = catalog.publisher(f.publisher) ?: Publisher(f.publisher, f.publisher, "")
+                f to pool.submit(Callable { FeedFetcher.fetch(f, pub, 25) })
+            }
+            for ((f, job) in jobs) {
+                val o = runCatching { job.get(60, TimeUnit.SECONDS) }.getOrElse { FeedFetcher.Outcome(-2, null, "timeout") }
+                val items = o.result?.items.orEmpty()
+                val withStream = items.filter { it.streamUrl != null }
+                val vid = if (items.isEmpty()) 0 else withStream.size * 100 / items.size
+                sb.appendLine("| ${f.publisher} | ${o.httpCode} | ${items.size} | $vid | ${withStream.firstOrNull()?.streamUrl?.take(90) ?: (o.error ?: "")} | ${f.url} |")
+            }
+        }
 
         sb.appendLine()
         sb.appendLine("## Articles")

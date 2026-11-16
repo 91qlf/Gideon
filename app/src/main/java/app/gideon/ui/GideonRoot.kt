@@ -41,6 +41,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -62,10 +63,13 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.gideon.data.NewsItem
 import app.gideon.ui.feed.FeedScreen
 import app.gideon.ui.feed.FeedTopBar
+import app.gideon.ui.feed.LocalYouTubePool
+import app.gideon.ui.feed.YouTubePool
 import app.gideon.ui.glass.IosTabBar
 import app.gideon.ui.glass.LocalBackdrop
 import app.gideon.ui.glass.LocalGlassDark
@@ -105,6 +109,15 @@ fun GideonRoot() {
     val palette = systemPalette()
     val rootBackdrop = rememberLayerBackdrop()
     val highlight = rememberHighlightAngle()
+
+    // Warm YouTube engines, reused from video to video (much faster than a fresh embed each time).
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val youTubePool = remember { YouTubePool(context, lifecycleOwner.lifecycle) }
+    LaunchedEffect(Unit) {
+        delay(1200)
+        youTubePool.warmUp(2)
+    }
+    DisposableEffect(Unit) { onDispose { youTubePool.release() } }
 
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var searchActive by rememberSaveable { mutableStateOf(false) }
@@ -199,7 +212,11 @@ fun GideonRoot() {
         }
     }
 
-    CompositionLocalProvider(LocalHighlightAngle provides highlight, LocalOverscrollFactory provides null) {
+    CompositionLocalProvider(
+        LocalHighlightAngle provides highlight,
+        LocalOverscrollFactory provides null,
+        LocalYouTubePool provides youTubePool,
+    ) {
         Box(Modifier.fillMaxSize().background(Color.Black)) {
             // Presenting layer: pushed back with rounded corners while a sheet is up (iOS page sheet).
             Box(

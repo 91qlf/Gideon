@@ -53,6 +53,7 @@ fun StoryViewer(
             NewsPage(
                 item = item,
                 active = active && state.settledPage == page,
+                preload = active && state.settledPage + 1 == page,
                 pageOffset = { (state.currentPage - page) + state.currentPageOffsetFraction },
                 vm = vm,
                 topSpace = topInset + 56.dp,

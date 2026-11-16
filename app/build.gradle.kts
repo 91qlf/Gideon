@@ -114,5 +114,9 @@ dependencies {
     implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:13.0.0")
     implementation("org.jsoup:jsoup:1.21.2")
 
+    // Native video player (direct MP4 / HLS files)
+    implementation("androidx.media3:media3-exoplayer:1.8.0")
+    implementation("androidx.media3:media3-exoplayer-hls:1.8.0")
+
     testImplementation("junit:junit:4.13.2")
 }

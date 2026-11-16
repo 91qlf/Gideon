@@ -56,6 +56,7 @@ object FeedParser {
             .let { if (it.equals(title, ignoreCase = true)) "" else it }
 
         val image = if (videoId != null) "https://i.ytimg.com/vi/$videoId/hqdefault.jpg" else imageOf(e, content)
+        val stream = if (videoId == null) streamOf(e) else null
 
         return NewsItem(
             id = if (videoId != null) "yt:$videoId" else "a:" + md5(link.substringBefore('#')),
@@ -71,7 +72,23 @@ object FeedParser {
             publishedAt = parseDate(e.child("pubdate", "published", "dc:date", "updated")?.text()) ?: now,
             videoId = videoId,
             isShort = videoId != null && link.contains("/shorts/"),
+            streamUrl = stream,
         )
+    }
+
+    /** A playable video file attached to the entry (enclosure or Media RSS). */
+    private fun streamOf(e: Element): String? {
+        for (m in e.getElementsByTag("media:content") + e.getElementsByTag("enclosure")) {
+            val url = m.attr("url").trim()
+            if (url.isEmpty()) continue
+            val type = m.attr("type").lowercase(Locale.ROOT)
+            val medium = m.attr("medium").lowercase(Locale.ROOT)
+            val path = url.lowercase(Locale.ROOT).substringBefore('?')
+            if (type.startsWith("video/") || type.contains("mpegurl") || medium == "video" ||
+                path.endsWith(".mp4") || path.endsWith(".m3u8") || path.endsWith(".webm")
+            ) return url
+        }
+        return null
     }
 
     private fun linkOf(e: Element): String? {

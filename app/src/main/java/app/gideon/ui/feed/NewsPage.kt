@@ -3,6 +3,7 @@ package app.gideon.ui.feed
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
@@ -27,6 +28,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -47,6 +49,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -105,6 +108,7 @@ import kotlin.random.Random
 fun NewsPage(
     item: NewsItem,
     active: Boolean,
+    preload: Boolean,
     pageOffset: () -> Float,
     vm: MainViewModel,
     topSpace: Dp,
@@ -130,7 +134,8 @@ fun NewsPage(
         }
 
         if (item.isVideo) {
-            YouTubeLayer(item, active, controller, vm.soundOn)
+            if (item.isYouTube) YouTubeLayer(item, active, preload, controller, vm.soundOn)
+            else NativeVideoLayer(item, active, preload, controller, vm.soundOn)
             Box(
                 Modifier.fillMaxSize().background(
                     Brush.verticalGradient(0.6f to Color.Transparent, 1f to Color.Black.copy(alpha = 0.8f))
@@ -226,21 +231,73 @@ fun NewsPage(
         }
 
         if (item.isVideo && active) {
-            Box(
+            ScrubBar(
+                controller,
                 Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = bottomSpace - 6.dp, start = 18.dp, end = 18.dp)
-                    .fillMaxWidth()
-                    .height(2.5.dp)
-                    .clip(Capsule())
-                    .background(Color.White.copy(alpha = 0.2f))
-            ) {
-                Box(Modifier.fillMaxHeight().fillMaxWidth(controller.progress).background(Color.White))
-            }
+                    .padding(bottom = bottomSpace - 18.dp, start = 18.dp, end = 18.dp),
+            )
         }
 
         HeartBursts(bursts, onDone = { id -> bursts = bursts.filterNot { it.id == id } }, size = 96.dp)
     }
+}
+
+/** TikTok-style progress line that becomes a scrubber when dragged. */
+@Composable
+private fun ScrubBar(controller: VideoController, modifier: Modifier = Modifier) {
+    var scrubbing by remember { mutableStateOf(false) }
+    var fraction by remember { mutableFloatStateOf(0f) }
+    val thickness by animateDpAsState(if (scrubbing) 7.dp else 2.5.dp, spring(dampingRatio = 0.7f, stiffness = 500f), label = "bar")
+    Box(
+        modifier
+            .fillMaxWidth()
+            .height(30.dp)
+            .pointerInput(controller) {
+                detectHorizontalDragGestures(
+                    onDragStart = { at ->
+                        scrubbing = true
+                        fraction = (at.x / size.width).coerceIn(0f, 1f)
+                    },
+                    onDragEnd = {
+                        controller.seekTo(fraction)
+                        scrubbing = false
+                    },
+                    onDragCancel = { scrubbing = false },
+                ) { change, _ ->
+                    change.consume()
+                    fraction = (change.position.x / size.width).coerceIn(0f, 1f)
+                }
+            }
+            .pointerInput(controller) {
+                detectTapGestures { at -> controller.seekTo((at.x / size.width).coerceIn(0f, 1f)) }
+            },
+        contentAlignment = Alignment.BottomCenter,
+    ) {
+        val f = if (scrubbing) fraction else controller.progress
+        if (scrubbing && controller.duration > 0f) {
+            Text(
+                "${clock(f * controller.duration)} / ${clock(controller.duration)}",
+                style = Ios.headline.copy(shadow = OverlayShadow),
+                color = Color.White,
+                modifier = Modifier.align(Alignment.TopCenter).offset(y = (-34).dp),
+            )
+        }
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(thickness)
+                .clip(Capsule())
+                .background(Color.White.copy(alpha = if (scrubbing) 0.3f else 0.2f))
+        ) {
+            Box(Modifier.fillMaxHeight().fillMaxWidth(f).background(Color.White))
+        }
+    }
+}
+
+private fun clock(seconds: Float): String {
+    val t = seconds.toInt().coerceAtLeast(0)
+    return "%d:%02d".format(t / 60, t % 60)
 }
 
 @Composable
@@ -313,7 +370,7 @@ private fun VideoBackground(item: NewsItem) {
                 .blur(70.dp),
         )
         Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)))
-        VideoFrame(item) { frame ->
+        VideoFrame(item.defaultAspect()) { frame ->
             AsyncImage(model = item.imageUrl, contentDescription = null, contentScale = ContentScale.Crop, modifier = frame)
         }
     }

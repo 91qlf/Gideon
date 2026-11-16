@@ -82,6 +82,7 @@ fun FeedScreen(
                 NewsPage(
                     item = item,
                     active = feedVisible && pagerState.settledPage == page,
+                    preload = feedVisible && pagerState.settledPage + 1 == page,
                     pageOffset = { (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction },
                     vm = vm,
                     topSpace = topSpace,
