@@ -13,6 +13,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.gideon.data.NewsItem
@@ -20,26 +21,28 @@ import app.gideon.ui.MainViewModel
 import app.gideon.ui.feed.NewsPage
 import app.gideon.ui.glass.GlassIconButton
 import app.gideon.ui.glass.LocalBackdrop
-import app.gideon.ui.theme.GColors
+import app.gideon.ui.glass.LocalGlassDark
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 
-/** Full-screen vertical reader opened from Explore, search or saved items. */
+/** Full-screen vertical player opened from search or saved items (videos, story lists). */
 @Composable
 fun StoryViewer(
     items: List<NewsItem>,
     startIndex: Int,
     vm: MainViewModel,
+    active: Boolean,
     topInset: Dp,
     bottomInset: Dp,
+    onOpenReader: (NewsItem) -> Unit,
     onClose: () -> Unit,
 ) {
     val backdrop = rememberLayerBackdrop()
     val state = rememberPagerState(initialPage = startIndex.coerceIn(0, (items.size - 1).coerceAtLeast(0))) { items.size }
     LaunchedEffect(state.settledPage) {
-        for (i in state.settledPage..(state.settledPage + 2)) items.getOrNull(i)?.let(vm::ensureImage)
+        for (i in state.settledPage..(state.settledPage + 2)) items.getOrNull(i)?.let(vm::ensureArticle)
     }
-    Box(Modifier.fillMaxSize().background(GColors.Bg)) {
+    Box(Modifier.fillMaxSize().background(Color.Black)) {
         VerticalPager(
             state = state,
             modifier = Modifier.fillMaxSize().layerBackdrop(backdrop),
@@ -49,21 +52,24 @@ fun StoryViewer(
             val item = items.getOrNull(page) ?: return@VerticalPager
             NewsPage(
                 item = item,
-                active = state.settledPage == page,
+                active = active && state.settledPage == page,
                 pageOffset = { (state.currentPage - page) + state.currentPageOffsetFraction },
                 vm = vm,
-                topSpace = topInset + 58.dp,
-                bottomSpace = bottomInset + 6.dp,
+                topSpace = topInset + 56.dp,
+                bottomSpace = bottomInset + 12.dp,
+                onOpenReader = onOpenReader,
                 onCategory = null,
+                onPublisher = null,
             )
         }
-        CompositionLocalProvider(LocalBackdrop provides backdrop) {
+        CompositionLocalProvider(LocalBackdrop provides backdrop, LocalGlassDark provides true) {
             GlassIconButton(
                 Icons.Rounded.Close,
                 "Fermer",
                 onClick = onClose,
-                size = 44.dp,
-                modifier = Modifier.align(Alignment.TopStart).padding(top = topInset + 8.dp, start = 14.dp),
+                size = 40.dp,
+                iconSize = 20.dp,
+                modifier = Modifier.align(Alignment.TopStart).padding(top = topInset + 8.dp, start = 16.dp),
             )
         }
     }

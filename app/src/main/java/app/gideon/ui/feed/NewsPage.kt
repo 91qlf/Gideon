@@ -1,7 +1,6 @@
 package app.gideon.ui.feed
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -15,14 +14,15 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -32,15 +32,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.automirrored.rounded.VolumeOff
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
+import androidx.compose.material.icons.rounded.AutoStories
 import androidx.compose.material.icons.rounded.Bookmark
 import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material.icons.rounded.IosShare
 import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,7 +49,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,9 +58,12 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -72,16 +74,19 @@ import app.gideon.data.NewsItem
 import app.gideon.ui.Burst
 import app.gideon.ui.HeartBursts
 import app.gideon.ui.MainViewModel
+import app.gideon.ui.glass.GlassCapsuleButton
 import app.gideon.ui.glass.GlassIconButton
-import app.gideon.ui.glass.GlassPill
+import app.gideon.ui.glass.GlassVariant
 import app.gideon.ui.glass.LocalBackdrop
+import app.gideon.ui.glass.LocalGlassDark
 import app.gideon.ui.glass.liquidGlass
-import app.gideon.ui.initials
+import app.gideon.ui.ios.PublisherLogo
 import app.gideon.ui.openItem
 import app.gideon.ui.shareItem
 import app.gideon.ui.sourceColor
-import app.gideon.ui.theme.GColors
-import app.gideon.ui.theme.GType
+import app.gideon.ui.style
+import app.gideon.ui.theme.Ios
+import app.gideon.ui.theme.OverlayShadow
 import app.gideon.ui.timeAgo
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
@@ -90,12 +95,11 @@ import coil3.request.crossfade
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.shapes.Capsule
-import com.kyant.shapes.RoundedRectangle
 import kotlin.random.Random
 
 /**
- * One full-screen story. The media is recorded into a backdrop layer so the glass
- * controls on top refract the picture/video behind them.
+ * One full-screen story. Media is recorded into a backdrop layer so the glass controls
+ * refract the picture behind them. Tap (or swipe left) on an article opens the reader.
  */
 @Composable
 fun NewsPage(
@@ -105,43 +109,36 @@ fun NewsPage(
     vm: MainViewModel,
     topSpace: Dp,
     bottomSpace: Dp,
+    onOpenReader: (NewsItem) -> Unit,
     onCategory: ((Category) -> Unit)?,
+    onPublisher: ((NewsItem) -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
     val pageBackdrop = rememberLayerBackdrop()
     val controller = remember(item.id) { VideoController() }
     var bursts by remember { mutableStateOf(listOf<Burst>()) }
     val liked = item.id in vm.liked
     val saved = vm.saved.any { it.id == item.id }
-    val appear by animateFloatAsState(if (active) 1f else 0f, spring(dampingRatio = 0.8f, stiffness = 220f), label = "appear")
+    val appear by animateFloatAsState(if (active) 1f else 0f, spring(dampingRatio = 0.85f, stiffness = 240f), label = "appear")
 
-    Box(modifier.fillMaxSize().clipToBounds().background(GColors.Bg)) {
+    Box(modifier.fillMaxSize().clipToBounds().background(Color.Black)) {
         Box(Modifier.fillMaxSize().layerBackdrop(pageBackdrop)) {
             if (item.isVideo) VideoBackground(item)
-            else ArticleMedia(item, vm.imageFor(item), active, pageOffset, topSpace)
-            Box(
-                Modifier.fillMaxSize().background(
-                    Brush.verticalGradient(
-                        0f to Color.Black.copy(alpha = 0.45f),
-                        0.16f to Color.Transparent,
-                        0.48f to Color.Transparent,
-                        1f to Color.Black.copy(alpha = 0.88f),
-                    )
-                )
-            )
+            else ArticleHero(item, vm.heroFor(item), active, pageOffset)
         }
 
         if (item.isVideo) {
             YouTubeLayer(item, active, controller, vm.soundOn)
             Box(
                 Modifier.fillMaxSize().background(
-                    Brush.verticalGradient(0.62f to Color.Transparent, 1f to Color.Black.copy(alpha = 0.75f))
+                    Brush.verticalGradient(0.6f to Color.Transparent, 1f to Color.Black.copy(alpha = 0.8f))
                 )
             )
         }
 
-        // Gestures: tap = play/pause, double tap = like with a heart burst
+        // Gestures: tap = read / pause, double tap = like, swipe left = read
         Box(
             Modifier
                 .fillMaxSize()
@@ -149,28 +146,39 @@ fun NewsPage(
                     detectTapGestures(
                         onDoubleTap = { at ->
                             bursts = bursts + Burst(System.nanoTime(), at, Random.nextInt(-18, 18).toFloat())
+                            if (item.id !in vm.liked) haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
                             vm.toggleLike(item, forceOn = true)
                         },
-                        onTap = { if (item.isVideo) controller.toggle() },
+                        onTap = { if (item.isVideo) controller.toggle() else onOpenReader(item) },
                     )
+                }
+                .pointerInput(item.id) {
+                    var total = 0f
+                    detectHorizontalDragGestures(
+                        onDragStart = { total = 0f },
+                        onDragEnd = { if (!item.isVideo && total < -70.dp.toPx()) onOpenReader(item) },
+                    ) { change, dx ->
+                        total += dx
+                        change.consume()
+                    }
                 }
         )
 
-        CompositionLocalProvider(LocalBackdrop provides pageBackdrop) {
+        CompositionLocalProvider(LocalBackdrop provides pageBackdrop, LocalGlassDark provides true) {
             if (item.isVideo) {
                 AnimatedVisibility(
                     visible = controller.started && !controller.isPlaying,
-                    enter = scaleIn(initialScale = 1.6f) + fadeIn(),
+                    enter = scaleIn(initialScale = 1.5f) + fadeIn(),
                     exit = scaleOut(targetScale = 0.6f) + fadeOut(),
                     modifier = Modifier.align(Alignment.Center),
                 ) {
                     Box(
-                        Modifier.size(84.dp).liquidGlass(shape = Capsule(), refractionHeight = 20.dp, refractionAmount = 40.dp),
+                        Modifier.size(72.dp).liquidGlass(Capsule(), GlassVariant.Clear),
                         contentAlignment = Alignment.Center,
-                    ) { Icon(Icons.Rounded.PlayArrow, "Lecture", tint = Color.White, modifier = Modifier.size(46.dp)) }
+                    ) { Icon(Icons.Rounded.PlayArrow, "Lecture", tint = Color.White, modifier = Modifier.size(38.dp)) }
                 }
                 if (controller.failed) {
-                    GlassPill(
+                    GlassCapsuleButton(
                         "Regarder sur YouTube",
                         onClick = { context.openItem(item) },
                         icon = Icons.Rounded.PlayArrow,
@@ -181,29 +189,38 @@ fun NewsPage(
 
             ActionRail(
                 item = item,
+                vm = vm,
                 liked = liked,
                 saved = saved,
-                onLike = { vm.toggleLike(item) },
-                onSave = { vm.toggleSave(item) },
+                onLike = {
+                    haptics.performHapticFeedback(if (liked) HapticFeedbackType.ToggleOff else HapticFeedbackType.ToggleOn)
+                    vm.toggleLike(item)
+                },
+                onSave = {
+                    haptics.performHapticFeedback(if (saved) HapticFeedbackType.ToggleOff else HapticFeedbackType.ToggleOn)
+                    vm.toggleSave(item)
+                },
                 onShare = { context.shareItem(item) },
-                soundOn = vm.soundOn,
-                onSound = { vm.setSound(!vm.soundOn) },
+                onPublisher = onPublisher,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(end = 12.dp, bottom = bottomSpace + 22.dp),
+                    .padding(end = 10.dp, bottom = bottomSpace + 6.dp),
             )
 
-            InfoPanel(
+            InfoBlock(
                 item = item,
-                onOpen = { vm.noteOpened(item); context.openItem(item) },
+                lead = if (item.isVideo) null else vm.leadFor(item),
+                minutes = vm.minutesFor(item),
+                onRead = { onOpenReader(item) },
                 onCategory = onCategory,
+                onPublisher = onPublisher,
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .fillMaxWidth()
-                    .padding(start = 16.dp, end = 84.dp, bottom = bottomSpace + 16.dp)
+                    .padding(start = 16.dp, end = 72.dp, bottom = bottomSpace + 8.dp)
                     .graphicsLayer {
-                        alpha = 0.35f + 0.65f * appear
-                        translationY = (1f - appear) * 28.dp.toPx()
+                        alpha = 0.4f + 0.6f * appear
+                        translationY = (1f - appear) * 20.dp.toPx()
                     },
             )
         }
@@ -212,86 +229,71 @@ fun NewsPage(
             Box(
                 Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = bottomSpace + 4.dp, start = 16.dp, end = 16.dp)
+                    .padding(bottom = bottomSpace - 6.dp, start = 18.dp, end = 18.dp)
                     .fillMaxWidth()
-                    .height(3.dp)
+                    .height(2.5.dp)
                     .clip(Capsule())
-                    .background(Color.White.copy(alpha = 0.18f))
+                    .background(Color.White.copy(alpha = 0.2f))
             ) {
                 Box(Modifier.fillMaxHeight().fillMaxWidth(controller.progress).background(Color.White))
             }
         }
 
-        HeartBursts(bursts, onDone = { id -> bursts = bursts.filterNot { it.id == id } })
+        HeartBursts(bursts, onDone = { id -> bursts = bursts.filterNot { it.id == id } }, size = 96.dp)
     }
 }
 
 @Composable
-private fun ArticleMedia(item: NewsItem, imageUrl: String?, active: Boolean, pageOffset: () -> Float, topSpace: Dp) {
+private fun ArticleHero(item: NewsItem, imageUrl: String?, active: Boolean, pageOffset: () -> Float) {
     val zoom by animateFloatAsState(
-        if (active) 1.12f else 1.0f,
-        if (active) tween(15000, easing = LinearEasing) else snap(),
+        if (active) 1.1f else 1f,
+        if (active) tween(14000, easing = LinearEasing) else snap(),
         label = "kenburns",
     )
     val ctx = LocalPlatformContext.current
-    val request = remember(imageUrl) { imageUrl?.let { ImageRequest.Builder(ctx).data(it).crossfade(450).build() } }
+    val request = remember(imageUrl) { imageUrl?.let { ImageRequest.Builder(ctx).data(it).crossfade(350).build() } }
     val accent = sourceColor(item.sourceName)
 
-    Box(Modifier.fillMaxSize()) {
-        // Ambient blurred copy fills the screen…
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val heroHeight = maxHeight * 0.64f
         if (request != null) {
             AsyncImage(
                 model = request,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer { scaleX = 1.3f; scaleY = 1.3f; alpha = 0.85f }
-                    .blur(60.dp),
+                    .fillMaxWidth()
+                    .height(heroHeight)
+                    .graphicsLayer {
+                        translationY = pageOffset() * size.height * 0.3f
+                        scaleX = zoom
+                        scaleY = zoom
+                    },
             )
         } else {
             Box(
-                Modifier.fillMaxSize().background(
-                    Brush.linearGradient(listOf(accent.copy(alpha = 0.55f), GColors.Bg, accent.copy(alpha = 0.25f)))
-                )
-            )
-        }
-        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.28f)))
-
-        // …and the sharp photo floats as a card, with parallax and a slow Ken Burns zoom.
-        Box(
-            Modifier
-                .padding(top = topSpace + 8.dp, start = 14.dp, end = 14.dp)
-                .fillMaxWidth()
-                .aspectRatio(0.92f)
-                .graphicsLayer { translationY = pageOffset() * size.height * 0.35f }
-                .clip(RoundedRectangle(34.dp))
-                .border(1.dp, Color.White.copy(alpha = 0.14f), RoundedRectangle(34.dp))
-                .background(accent.copy(alpha = 0.25f))
-        ) {
-            if (request != null) {
-                AsyncImage(
-                    model = request,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize().graphicsLayer { scaleX = zoom; scaleY = zoom },
-                )
-            } else {
-                Box(
-                    Modifier.fillMaxSize().background(
-                        Brush.linearGradient(listOf(accent, accent.copy(alpha = 0.35f), GColors.Bg))
-                    ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        initials(item.sourceName),
-                        color = Color.White.copy(alpha = 0.9f),
-                        fontSize = 96.sp,
-                        fontWeight = FontWeight.Black,
-                    )
-                }
+                Modifier
+                    .fillMaxWidth()
+                    .height(heroHeight)
+                    .background(Brush.linearGradient(listOf(accent, accent.copy(alpha = 0.35f), Color.Black))),
+                contentAlignment = Alignment.Center,
+            ) {
+                PublisherLogo(item.sourceName, item.domain, 96.dp)
             }
         }
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(heroHeight + 1.dp)
+                .background(
+                    Brush.verticalGradient(
+                        0f to Color.Black.copy(alpha = 0.45f),
+                        0.18f to Color.Transparent,
+                        0.5f to Color.Transparent,
+                        1f to Color.Black,
+                    )
+                )
+        )
     }
 }
 
@@ -304,10 +306,13 @@ private fun VideoBackground(item: NewsItem) {
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxSize()
-                .graphicsLayer { scaleX = 1.4f; scaleY = 1.4f }
+                .graphicsLayer {
+                    scaleX = 1.4f
+                    scaleY = 1.4f
+                }
                 .blur(70.dp),
         )
-        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f)))
+        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)))
         VideoFrame(item) { frame ->
             AsyncImage(model = item.imageUrl, contentDescription = null, contentScale = ContentScale.Crop, modifier = frame)
         }
@@ -317,64 +322,64 @@ private fun VideoBackground(item: NewsItem) {
 @Composable
 private fun ActionRail(
     item: NewsItem,
+    vm: MainViewModel,
     liked: Boolean,
     saved: Boolean,
     onLike: () -> Unit,
     onSave: () -> Unit,
     onShare: () -> Unit,
-    soundOn: Boolean,
-    onSound: () -> Unit,
+    onPublisher: ((NewsItem) -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        val color = sourceColor(item.sourceName)
-        Box(
-            Modifier
-                .size(52.dp)
-                .liquidGlass(shape = Capsule(), surface = color.copy(alpha = 0.30f), refractionHeight = 12.dp, refractionAmount = 24.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(initials(item.sourceName), color = Color.White, fontWeight = FontWeight.Black, fontSize = 17.sp)
-        }
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        PublisherLogo(
+            item.sourceName,
+            item.domain,
+            42.dp,
+            shape = CircleShape,
+            modifier = Modifier
+                .border(1.5.dp, Color.White.copy(alpha = 0.9f), CircleShape)
+                .then(
+                    if (onPublisher != null) Modifier.clickable(remember { MutableInteractionSource() }, indication = null) { onPublisher(item) }
+                    else Modifier
+                ),
+        )
         RailButton(
             icon = if (liked) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
             label = "J'aime",
-            tint = if (liked) GColors.Heart else Color.White,
+            tint = if (liked) Color(0xFFFF375F) else Color.White,
             toggled = liked,
             onClick = onLike,
         )
         RailButton(
             icon = if (saved) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder,
             label = "Garder",
-            tint = if (saved) GColors.Gold else Color.White,
+            tint = if (saved) Color(0xFFFFD60A) else Color.White,
             toggled = saved,
             onClick = onSave,
         )
-        RailButton(icon = Icons.Rounded.Share, label = "Partager", tint = Color.White, toggled = false, onClick = onShare)
+        RailButton(icon = Icons.Rounded.IosShare, label = "Partager", tint = Color.White, toggled = false, onClick = onShare)
         if (item.isVideo) {
             RailButton(
-                icon = if (soundOn) Icons.AutoMirrored.Rounded.VolumeUp else Icons.AutoMirrored.Rounded.VolumeOff,
-                label = if (soundOn) "Son" else "Muet",
+                icon = if (vm.soundOn) Icons.AutoMirrored.Rounded.VolumeUp else Icons.AutoMirrored.Rounded.VolumeOff,
+                label = if (vm.soundOn) "Son" else "Muet",
                 tint = Color.White,
-                toggled = soundOn,
-                onClick = onSound,
+                toggled = vm.soundOn,
+                onClick = { vm.setSound(!vm.soundOn) },
             )
         }
     }
 }
 
 @Composable
-private fun RailButton(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
-    tint: Color,
-    toggled: Boolean,
-    onClick: () -> Unit,
-) {
+private fun RailButton(icon: ImageVector, label: String, tint: Color, toggled: Boolean, onClick: () -> Unit) {
     val bounce = remember { Animatable(1f) }
     var first by remember { mutableStateOf(true) }
     LaunchedEffect(toggled) {
-        if (first) { first = false; return@LaunchedEffect }
+        if (first) {
+            first = false
+            return@LaunchedEffect
+        }
         if (toggled) {
             bounce.snapTo(0.55f)
             bounce.animateTo(1f, spring(dampingRatio = 0.32f, stiffness = 420f))
@@ -385,69 +390,97 @@ private fun RailButton(
             icon = icon,
             contentDescription = label,
             onClick = onClick,
-            size = 50.dp,
+            size = 44.dp,
+            iconSize = 22.dp,
+            variant = GlassVariant.Clear,
             tint = tint,
-            iconModifier = Modifier.graphicsLayer { scaleX = bounce.value; scaleY = bounce.value },
+            iconModifier = Modifier.graphicsLayer {
+                scaleX = bounce.value
+                scaleY = bounce.value
+            },
         )
         Spacer(Modifier.height(3.dp))
-        Text(label, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, style = GType.Caption.copy(color = Color.White))
+        Text(label, style = Ios.caption2.copy(shadow = OverlayShadow), color = Color.White, fontWeight = FontWeight.SemiBold)
     }
 }
 
 @Composable
-private fun InfoPanel(
+private fun InfoBlock(
     item: NewsItem,
-    onOpen: () -> Unit,
+    lead: String?,
+    minutes: Int?,
+    onRead: () -> Unit,
     onCategory: ((Category) -> Unit)?,
+    onPublisher: ((NewsItem) -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
-    var expanded by rememberSaveable(item.id) { mutableStateOf(false) }
     Column(modifier) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Row(
-                Modifier
-                    .height(30.dp)
-                    .liquidGlass(shape = Capsule(), refractionHeight = 8.dp, refractionAmount = 14.dp, castShadow = false)
-                    .padding(horizontal = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(Modifier.size(8.dp).clip(CircleShape).background(sourceColor(item.sourceName)))
-                Spacer(Modifier.width(7.dp))
-                Text(
-                    if (item.isVideo) "${item.sourceName} · Vidéo" else item.sourceName,
-                    style = GType.Label,
-                    maxLines = 1,
-                )
-            }
-            Spacer(Modifier.width(10.dp))
-            Text(timeAgo(item.publishedAt), style = GType.Caption.copy(color = Color.White.copy(alpha = 0.78f)))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = if (onPublisher != null) {
+                Modifier.clickable(remember { MutableInteractionSource() }, indication = null) { onPublisher(item) }
+            } else Modifier,
+        ) {
+            PublisherLogo(item.sourceName, item.domain, 20.dp)
+            Spacer(Modifier.width(8.dp))
+            Text(
+                item.sourceName,
+                style = Ios.subheadline.copy(shadow = OverlayShadow),
+                fontWeight = FontWeight.SemiBold,
+                color = Color.White,
+                maxLines = 1,
+            )
+            Text(
+                "  ·  " + timeAgo(item.publishedAt),
+                style = Ios.subheadline.copy(shadow = OverlayShadow),
+                color = Color.White.copy(alpha = 0.65f),
+                maxLines = 1,
+            )
         }
-        Spacer(Modifier.height(10.dp))
-        Text(item.title, style = GType.Title, maxLines = 5, overflow = TextOverflow.Ellipsis)
-        if (item.summary.isNotBlank()) {
+        val cat = item.categoryEnum
+        if (cat != Category.UNE) {
             Spacer(Modifier.height(8.dp))
             Text(
-                item.summary,
-                style = GType.Body,
-                maxLines = if (expanded) 14 else 3,
+                cat.label.uppercase(),
+                color = cat.style().color,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.9.sp,
+                modifier = if (onCategory != null) {
+                    Modifier.clickable(remember { MutableInteractionSource() }, indication = null) { onCategory(cat) }
+                } else Modifier,
+            )
+            Spacer(Modifier.height(3.dp))
+        } else {
+            Spacer(Modifier.height(8.dp))
+        }
+        Text(
+            item.title,
+            style = Ios.title3.copy(fontWeight = FontWeight.Bold, shadow = OverlayShadow),
+            color = Color.White,
+            maxLines = 4,
+            overflow = TextOverflow.Ellipsis,
+        )
+        val body = lead ?: item.summary
+        if (body.isNotBlank()) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                body,
+                style = Ios.subheadline.copy(shadow = OverlayShadow, lineHeight = 21.sp),
+                color = Color.White.copy(alpha = 0.78f),
+                maxLines = 4,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .animateContentSize(spring(dampingRatio = 0.85f, stiffness = 380f))
-                    .clickable(remember { MutableInteractionSource() }, indication = null) { expanded = !expanded },
             )
         }
-        Spacer(Modifier.height(14.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            GlassPill(
-                if (item.isVideo) "Ouvrir sur YouTube" else "Lire l'article",
-                onClick = onOpen,
-                icon = if (item.isVideo) Icons.Rounded.PlayArrow else Icons.AutoMirrored.Rounded.OpenInNew,
-                surface = Color.White.copy(alpha = 0.16f),
+        if (!item.isVideo) {
+            Spacer(Modifier.height(12.dp))
+            GlassCapsuleButton(
+                if (minutes != null) "Lire l'article · $minutes min" else "Lire l'article",
+                onClick = onRead,
+                icon = Icons.Rounded.AutoStories,
+                height = 34.dp,
+                variant = GlassVariant.Clear,
             )
-            val cat = item.categoryEnum
-            if (onCategory != null && cat != Category.UNE) {
-                GlassPill("#${cat.label}", onClick = { onCategory(cat) }, height = 42.dp)
-            }
         }
     }
 }

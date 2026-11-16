@@ -36,19 +36,9 @@
    "domain": "lexpress.fr"
   },
   {
-   "id": "lepoint",
-   "name": "Le Point",
-   "domain": "lepoint.fr"
-  },
-  {
    "id": "lobs",
    "name": "L'Obs",
    "domain": "nouvelobs.com"
-  },
-  {
-   "id": "lesechos",
-   "name": "Les Echos",
-   "domain": "lesechos.fr"
   },
   {
    "id": "challenges",
@@ -139,21 +129,6 @@
    "id": "lequipe",
    "name": "L'Équipe",
    "domain": "lequipe.fr"
-  },
-  {
-   "id": "eurosport",
-   "name": "Eurosport",
-   "domain": "eurosport.fr"
-  },
-  {
-   "id": "sofoot",
-   "name": "So Foot",
-   "domain": "sofoot.com"
-  },
-  {
-   "id": "rmcsport",
-   "name": "RMC Sport",
-   "domain": "rmcsport.bfmtv.com"
   },
   {
    "id": "lesinrocks",
@@ -348,12 +323,6 @@
   {
    "publisher": "france24",
    "kind": "rss",
-   "category": "SPORT",
-   "url": "https://www.france24.com/fr/sports/rss"
-  },
-  {
-   "publisher": "france24",
-   "kind": "rss",
    "category": "CULTURE",
    "url": "https://www.france24.com/fr/culture/rss"
   },
@@ -442,46 +411,16 @@
    "url": "https://feeds.leparisien.fr/leparisien/rss"
   },
   {
-   "publisher": "leparisien",
-   "kind": "rss",
-   "category": "UNE",
-   "url": "https://www.leparisien.fr/arc/outboundfeeds/rss/une.xml"
-  },
-  {
    "publisher": "lexpress",
    "kind": "rss",
    "category": "UNE",
    "url": "https://www.lexpress.fr/arc/outboundfeeds/rss/alaune.xml"
   },
   {
-   "publisher": "lepoint",
-   "kind": "rss",
-   "category": "UNE",
-   "url": "https://www.lepoint.fr/24h-infos/rss.xml"
-  },
-  {
-   "publisher": "lepoint",
-   "kind": "rss",
-   "category": "UNE",
-   "url": "https://www.lepoint.fr/rss.xml"
-  },
-  {
    "publisher": "lobs",
    "kind": "rss",
    "category": "UNE",
    "url": "https://www.nouvelobs.com/a-la-une/rss.xml"
-  },
-  {
-   "publisher": "lesechos",
-   "kind": "rss",
-   "category": "ECO",
-   "url": "https://syndication.lesechos.fr/rss/rss_une.xml"
-  },
-  {
-   "publisher": "lesechos",
-   "kind": "rss",
-   "category": "TECH",
-   "url": "https://syndication.lesechos.fr/rss/rss_tech_medias.xml"
   },
   {
    "publisher": "challenges",
@@ -494,12 +433,6 @@
    "kind": "rss",
    "category": "UNE",
    "url": "https://www.bfmtv.com/rss/news-24-7/"
-  },
-  {
-   "publisher": "bfmtv",
-   "kind": "rss",
-   "category": "UNE",
-   "url": "https://www.bfmtv.com/rss/info/flux-rss/flux-toutes-les-actualites/"
   },
   {
    "publisher": "bfmtv",
@@ -538,12 +471,6 @@
    "url": "https://www.rfi.fr/fr/afrique/rss"
   },
   {
-   "publisher": "euronews",
-   "kind": "rss",
-   "category": "MONDE",
-   "url": "https://fr.euronews.com/rss"
-  },
-  {
    "publisher": "courrier",
    "kind": "rss",
    "category": "MONDE",
@@ -554,12 +481,6 @@
    "kind": "rss",
    "category": "FRANCE",
    "url": "https://www.ouest-france.fr/rss/une"
-  },
-  {
-   "publisher": "ouestfrance",
-   "kind": "rss",
-   "category": "FRANCE",
-   "url": "https://www.ouest-france.fr/rss-en-continu.xml"
   },
   {
    "publisher": "20minutes",
@@ -656,24 +577,6 @@
    "kind": "rss",
    "category": "SPORT",
    "url": "https://dwh.lequipe.fr/api/edito/rss?path=/"
-  },
-  {
-   "publisher": "eurosport",
-   "kind": "rss",
-   "category": "SPORT",
-   "url": "https://www.eurosport.fr/rss.xml"
-  },
-  {
-   "publisher": "sofoot",
-   "kind": "rss",
-   "category": "SPORT",
-   "url": "https://www.sofoot.com/rss.xml"
-  },
-  {
-   "publisher": "rmcsport",
-   "kind": "rss",
-   "category": "SPORT",
-   "url": "https://rmcsport.bfmtv.com/rss/info/flux-rss/flux-toutes-les-actualites/"
   },
   {
    "publisher": "lesinrocks",

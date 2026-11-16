@@ -130,7 +130,14 @@ object ArticleExtractor {
                 bestScore = adjusted
             }
         }
-        val top = best ?: return doc.selectFirst("article") ?: doc.body()
+        var top = best ?: return doc.selectFirst("article") ?: doc.body()
+
+        // Paragraphs wrapped one by one (div > p): climb while the parent holds much more text.
+        repeat(2) {
+            val up = top.parent() ?: return@repeat
+            if (up.normalName() == "body" || up.normalName() == "html") return@repeat
+            if (paragraphText(up) > paragraphText(top) * 1.8 && linkDensity(up) < 0.35) top = up
+        }
 
         // Readability-style sibling merge: pages often split the text around ads.
         val parent = top.parent() ?: return wrap(listOf(top))
@@ -143,6 +150,9 @@ object ArticleExtractor {
         }
         return wrap(parts)
     }
+
+    private fun paragraphText(el: Element): Int =
+        el.getElementsByTag("p").sumOf { p -> p.text().length.takeIf { it >= 40 } ?: 0 }
 
     private fun wrap(parts: List<Element>): Element {
         val box = Element("div")

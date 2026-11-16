@@ -54,8 +54,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import app.gideon.data.Category
 import app.gideon.data.NewsItem
-import app.gideon.ui.theme.GColors
-import app.gideon.ui.theme.GType
+import app.gideon.ui.theme.Ios
 import kotlin.math.roundToInt
 
 fun timeAgo(ts: Long, now: Long = System.currentTimeMillis()): String {
@@ -86,14 +85,14 @@ fun initials(name: String): String =
 data class CategoryStyle(val icon: ImageVector, val color: Color)
 
 fun Category.style(): CategoryStyle = when (this) {
-    Category.UNE -> CategoryStyle(Icons.Rounded.Newspaper, GColors.Coral)
-    Category.MONDE -> CategoryStyle(Icons.Rounded.Public, GColors.Cyan)
-    Category.FRANCE -> CategoryStyle(Icons.Rounded.Flag, Color(0xFF4D7CFF))
-    Category.ECO -> CategoryStyle(Icons.Rounded.Euro, Color(0xFF34C759))
-    Category.TECH -> CategoryStyle(Icons.Rounded.Memory, Color(0xFF7C5CFF))
-    Category.SCIENCES -> CategoryStyle(Icons.Rounded.Science, Color(0xFF00C7BE))
-    Category.SPORT -> CategoryStyle(Icons.Rounded.SportsSoccer, Color(0xFFFFB020))
-    Category.CULTURE -> CategoryStyle(Icons.Rounded.TheaterComedy, Color(0xFFE85CFF))
+    Category.UNE -> CategoryStyle(Icons.Rounded.Newspaper, Color(0xFFFF375F))
+    Category.MONDE -> CategoryStyle(Icons.Rounded.Public, Color(0xFF0A84FF))
+    Category.FRANCE -> CategoryStyle(Icons.Rounded.Flag, Color(0xFF5E5CE6))
+    Category.ECO -> CategoryStyle(Icons.Rounded.Euro, Color(0xFF30D158))
+    Category.TECH -> CategoryStyle(Icons.Rounded.Memory, Color(0xFFBF5AF2))
+    Category.SCIENCES -> CategoryStyle(Icons.Rounded.Science, Color(0xFF40CBE0))
+    Category.SPORT -> CategoryStyle(Icons.Rounded.SportsSoccer, Color(0xFFFF9F0A))
+    Category.CULTURE -> CategoryStyle(Icons.Rounded.TheaterComedy, Color(0xFFFF2D55))
 }
 
 fun Context.openItem(item: NewsItem) {
@@ -137,8 +136,8 @@ fun GideonLogo(modifier: Modifier = Modifier, split: Float = 1f, strokeScale: Fl
     Canvas(modifier) {
         val unit = size.minDimension / 108f
         val shift = 1.8f * unit * split
-        drawG(Offset(-shift, -shift * 0.78f), GColors.Cyan, unit, strokeScale)
-        drawG(Offset(shift, shift * 0.78f), GColors.Coral, unit, strokeScale)
+        drawG(Offset(-shift, -shift * 0.78f), Color(0xFF2FE6FF), unit, strokeScale)
+        drawG(Offset(shift, shift * 0.78f), Color(0xFFFF2D6F), unit, strokeScale)
         drawG(Offset.Zero, Color.White, unit, strokeScale)
     }
 }
@@ -172,28 +171,9 @@ fun SplashView(modifier: Modifier = Modifier) {
     Box(modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
         Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
             GideonLogo(Modifier.size(150.dp), split = split)
-            Text("Gideon", style = GType.LargeTitle)
-            Text("L'actu, en un scroll", style = GType.Caption, modifier = Modifier.padding(top = 6.dp))
+            Text("Gideon", style = Ios.largeTitle, color = Color.White)
+            Text("L'actu, en un scroll", style = Ios.subheadline, color = Color.White.copy(alpha = 0.6f), modifier = Modifier.padding(top = 4.dp))
         }
-    }
-}
-
-/** Slowly drifting colour field used behind glass on the non-feed screens. */
-@Composable
-fun AmbientBackground(modifier: Modifier = Modifier) {
-    val t = rememberInfiniteTransition(label = "ambient")
-    val a by t.animateFloat(0f, 1f, infiniteRepeatable(tween(16000, easing = LinearEasing), RepeatMode.Reverse), label = "a")
-    Canvas(modifier.fillMaxSize()) {
-        drawRect(GColors.Bg)
-        val w = size.width
-        val h = size.height
-        fun blob(color: Color, x: Float, y: Float, r: Float) {
-            drawCircle(Brush.radialGradient(listOf(color, Color.Transparent), center = Offset(x, y), radius = r), r, Offset(x, y))
-        }
-        blob(Color(0xFF4B2BFF).copy(alpha = 0.55f), w * (0.1f + 0.35f * a), h * 0.10f, w * 0.95f)
-        blob(GColors.Coral.copy(alpha = 0.42f), w * (1.0f - 0.3f * a), h * (0.36f + 0.08f * a), w * 0.8f)
-        blob(GColors.Cyan.copy(alpha = 0.30f), w * (0.2f + 0.25f * a), h * (0.72f - 0.1f * a), w * 0.9f)
-        blob(GColors.Gold.copy(alpha = 0.16f), w * 0.85f, h * (0.95f - 0.05f * a), w * 0.6f)
     }
 }
 
@@ -212,7 +192,7 @@ fun HeartBursts(bursts: List<Burst>, onDone: (Long) -> Unit, size: Dp = 110.dp) 
             Icon(
                 Icons.Rounded.Favorite,
                 null,
-                tint = GColors.Heart,
+                tint = Color(0xFFFF375F),
                 modifier = Modifier
                     .offset { IntOffset((b.at.x - size.toPx() / 2).roundToInt(), (b.at.y - size.toPx() / 2).roundToInt()) }
                     .size(size)

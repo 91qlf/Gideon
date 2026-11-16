@@ -3,6 +3,7 @@ package app.gideon.ui
 import android.app.Application
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateMapOf
@@ -11,20 +12,30 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.gideon.GideonApp
+import app.gideon.data.Article
 import app.gideon.data.Category
 import app.gideon.data.FeedCache
 import app.gideon.data.FeedMixer
 import app.gideon.data.FeedTab
 import app.gideon.data.NewsItem
-import app.gideon.data.SourceKind
+import app.gideon.data.Publisher
 import app.gideon.work.DailyBriefWorker
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
+
+sealed interface ArticleState {
+    data object Loading : ArticleState
+    data class Ready(val article: Article) : ArticleState
+    data object Failed : ArticleState
+}
 
 class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private val gideon = app as GideonApp
     private val repo = gideon.repository
     private val store = gideon.store
+    val catalog get() = repo.catalog
 
     var allItems by mutableStateOf<List<NewsItem>>(emptyList()); private set
     private var forYou by mutableStateOf<List<NewsItem>>(emptyList())
@@ -46,17 +57,21 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var disabledGroups by mutableStateOf(store.disabledGroups); private set
     var soundOn by mutableStateOf(store.soundOn); private set
     var dailyBrief by mutableStateOf(store.dailyBrief); private set
+    var textScale by mutableFloatStateOf(store.textScale); private set
 
     var feedTab by mutableStateOf(FeedTab.FOR_YOU); private set
     var categoryFilter by mutableStateOf<Category?>(null); private set
+    var publisherFilter by mutableStateOf<Publisher?>(null); private set
 
-    val imageOverrides = mutableStateMapOf<String, String>()
-    private val imageAttempts = HashSet<String>()
+    val articles = mutableStateMapOf<String, ArticleState>()
+    private val articleGate = Semaphore(3)
 
     val currentFeed: List<NewsItem> by derivedStateOf {
         val cat = categoryFilter
+        val pub = publisherFilter
         when {
-            cat != null && cat == Category.UNE -> allItems.filter { it.category == cat.name || it.isVideo }
+            pub != null -> allItems.filter { it.publisherId == pub.id }
+            cat == Category.UNE -> allItems.filter { it.category == cat.name || it.isVideo }
             cat != null -> allItems.filter { it.category == cat.name }
             feedTab == FeedTab.VIDEOS -> allItems.filter { it.isVideo }
             feedTab == FeedTab.ARTICLES -> allItems.filter { !it.isVideo }
@@ -103,7 +118,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                             message = if (fresh > 0) "$fresh nouvelles infos" else "Tu es à jour"
                         }
                     }
-                    fresh > 0 -> { pending = result; pendingCount = fresh }
+                    fresh > 0 -> {
+                        pending = result
+                        pendingCount = fresh
+                    }
                 }
             } else {
                 loadError = allItems.isEmpty()
@@ -119,12 +137,17 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         setItems(result.items)
     }
 
-    fun applyPending() { pending?.let(::applyResult) }
+    fun applyPending() {
+        pending?.let(::applyResult)
+    }
 
-    fun clearMessage() { message = null }
+    fun clearMessage() {
+        message = null
+    }
 
     fun selectTab(tab: FeedTab) {
         categoryFilter = null
+        publisherFilter = null
         if (feedTab != tab) {
             feedTab = tab
             feedVersion++
@@ -132,11 +155,19 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun openCategory(category: Category?) {
+        publisherFilter = null
         categoryFilter = category
         feedVersion++
     }
 
-    fun isLiked(item: NewsItem) = item.id in liked
+    fun openPublisher(publisher: Publisher?) {
+        categoryFilter = null
+        publisherFilter = publisher
+        feedVersion++
+    }
+
+    fun publisherOf(item: NewsItem): Publisher? = catalog.publisher(item.publisherId)
+
     fun isSaved(item: NewsItem) = saved.any { it.id == item.id }
 
     fun toggleLike(item: NewsItem, forceOn: Boolean = false) {
@@ -150,7 +181,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun toggleSave(item: NewsItem) {
         saved = if (isSaved(item)) saved.filterNot { it.id == item.id } else {
             bumpAffinity(item, 1.5f)
-            listOf(item.copy(imageUrl = item.imageUrl ?: imageOverrides[item.id])) + saved
+            listOf(item.copy(imageUrl = heroFor(item))) + saved
         }
         store.saved = saved
     }
@@ -163,7 +194,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         store.affinity = map
     }
 
-    fun setSound(on: Boolean) { soundOn = on; store.soundOn = on }
+    fun setSound(on: Boolean) {
+        soundOn = on
+        store.soundOn = on
+    }
 
     fun updateDailyBrief(on: Boolean) {
         dailyBrief = on
@@ -171,7 +205,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (on) DailyBriefWorker.schedule(gideon) else DailyBriefWorker.cancel(gideon)
     }
 
-    val catalog get() = repo.catalog
+    fun cycleTextScale() {
+        val steps = listOf(0.9f, 1f, 1.12f, 1.25f)
+        val next = steps[(steps.indexOfFirst { it >= textScale - 0.01f }.coerceAtLeast(0) + 1) % steps.size]
+        textScale = next
+        store.textScale = next
+    }
 
     fun isGroupEnabled(publisher: String, kind: String) = "$kind:$publisher" !in disabledGroups
 
@@ -179,21 +218,37 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val key = "$kind:$publisher"
         disabledGroups = if (enabled) disabledGroups - key else disabledGroups + key
         store.disabledGroups = disabledGroups
-        // hide content of disabled outlets immediately; a refresh brings new ones back
         if (!enabled) setItems(allItems.filter { it.groupKey != key }) else refresh(manual = false)
     }
 
     var shouldAskNotifications: Boolean
         get() = !store.askedNotifications && dailyBrief
-        set(@Suppress("UNUSED_PARAMETER") value) { store.askedNotifications = true }
+        set(@Suppress("UNUSED_PARAMETER") value) {
+            store.askedNotifications = true
+        }
 
-    fun imageFor(item: NewsItem): String? = item.imageUrl ?: imageOverrides[item.id]
+    // ------------------------------------------------------------ full articles
 
-    /** Looks for an og:image when a feed entry ships without a picture. */
-    fun ensureImage(item: NewsItem) {
-        if (item.imageUrl != null || item.isVideo || !imageAttempts.add(item.id)) return
+    /** Downloads and extracts the article behind [item] (once). */
+    fun ensureArticle(item: NewsItem) {
+        if (item.isVideo || articles.containsKey(item.id)) return
+        articles[item.id] = ArticleState.Loading
         viewModelScope.launch {
-            repo.article(item.link)?.heroImage?.let { imageOverrides[item.id] = it }
+            val article = articleGate.withPermit { repo.article(item.link) }
+            articles[item.id] = if (article != null) ArticleState.Ready(article) else ArticleState.Failed
         }
     }
+
+    fun retryArticle(item: NewsItem) {
+        articles.remove(item.id)
+        ensureArticle(item)
+    }
+
+    private fun readyArticle(item: NewsItem): Article? = (articles[item.id] as? ArticleState.Ready)?.article
+
+    fun heroFor(item: NewsItem): String? = item.imageUrl ?: readyArticle(item)?.heroImage
+
+    fun leadFor(item: NewsItem): String? = readyArticle(item)?.lead(300)
+
+    fun minutesFor(item: NewsItem): Int? = readyArticle(item)?.takeIf { !it.truncated }?.readingMinutes
 }

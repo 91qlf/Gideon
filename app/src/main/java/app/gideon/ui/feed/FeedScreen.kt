@@ -34,17 +34,20 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import app.gideon.data.Category
 import app.gideon.data.FeedTab
+import app.gideon.data.NewsItem
 import app.gideon.ui.GideonLogo
 import app.gideon.ui.MainViewModel
+import app.gideon.ui.glass.GlassCapsuleButton
 import app.gideon.ui.glass.GlassIconButton
-import app.gideon.ui.glass.GlassPill
 import app.gideon.ui.glass.GlassSegmented
-import app.gideon.ui.theme.GType
+import app.gideon.ui.theme.Ios
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,6 +59,7 @@ fun FeedScreen(
     feedVisible: Boolean,
     topSpace: Dp,
     bottomSpace: Dp,
+    onOpenReader: (NewsItem) -> Unit,
 ) {
     val items = vm.currentFeed
     PullToRefreshBox(
@@ -82,16 +86,18 @@ fun FeedScreen(
                     vm = vm,
                     topSpace = topSpace,
                     bottomSpace = bottomSpace,
-                    onCategory = { vm.openCategory(it) },
+                    onOpenReader = onOpenReader,
+                    onCategory = { cat: Category -> vm.openCategory(cat) },
+                    onPublisher = { it: NewsItem -> vm.openPublisher(vm.publisherOf(it)) },
                 )
             }
         }
     }
 
-    // Look ahead: fetch missing pictures for the next stories.
+    // Read ahead: fetch the full text of the current and next stories.
     LaunchedEffect(pagerState.settledPage, items) {
         val start = pagerState.settledPage
-        for (i in start..(start + 3)) items.getOrNull(i)?.let(vm::ensureImage)
+        for (i in start..(start + 2)) items.getOrNull(i)?.let(vm::ensureArticle)
     }
 }
 
@@ -99,26 +105,27 @@ fun FeedScreen(
 private fun EmptyFeed(vm: MainViewModel) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
-            GideonLogo(Modifier.size(96.dp))
+            GideonLogo(Modifier.size(88.dp))
             Spacer(Modifier.height(12.dp))
             Text(
                 when {
                     vm.isRefreshing -> "Chargement de l'actu…"
-                    vm.loadError -> "Impossible de joindre les sources.\nVérifie ta connexion."
+                    vm.loadError -> "Impossible de joindre les journaux.\nVérifie ta connexion."
                     else -> "Rien ici pour l'instant."
                 },
-                style = GType.Body,
+                style = Ios.subheadline,
+                color = Color.White.copy(alpha = 0.8f),
                 textAlign = TextAlign.Center,
             )
             if (!vm.isRefreshing) {
                 Spacer(Modifier.height(16.dp))
-                GlassPill("Réessayer", onClick = { vm.refresh(manual = true) }, icon = Icons.Rounded.Refresh)
+                GlassCapsuleButton("Réessayer", onClick = { vm.refresh(manual = true) }, icon = Icons.Rounded.Refresh)
             }
         }
     }
 }
 
-/** Glass header floating over the feed: tabs (or the active category) and refresh. */
+/** Floating header of the feed: segmented control (or active filter) and refresh. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedTopBar(vm: MainViewModel, pullState: PullToRefreshState, topInset: Dp, onRefresh: () -> Unit) {
@@ -128,12 +135,17 @@ fun FeedTopBar(vm: MainViewModel, pullState: PullToRefreshState, topInset: Dp, o
     Column(
         Modifier.fillMaxWidth().padding(top = topInset + 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Box(Modifier.fillMaxWidth().height(46.dp).padding(horizontal = 14.dp)) {
-            val cat = vm.categoryFilter
-            if (cat != null) {
-                GlassPill(cat.label, onClick = { vm.openCategory(null) }, icon = Icons.Rounded.Close, modifier = Modifier.align(Alignment.Center))
+        Box(Modifier.fillMaxWidth().height(40.dp).padding(horizontal = 16.dp)) {
+            val filter = vm.publisherFilter?.name ?: vm.categoryFilter?.label
+            if (filter != null) {
+                GlassCapsuleButton(
+                    filter,
+                    onClick = { vm.openCategory(null) },
+                    icon = Icons.Rounded.Close,
+                    modifier = Modifier.align(Alignment.Center),
+                )
             } else {
                 GlassSegmented(
                     options = FeedTab.entries.map { it.label },
@@ -146,7 +158,8 @@ fun FeedTopBar(vm: MainViewModel, pullState: PullToRefreshState, topInset: Dp, o
                 icon = Icons.Rounded.Refresh,
                 contentDescription = "Actualiser",
                 onClick = onRefresh,
-                size = 42.dp,
+                size = 38.dp,
+                iconSize = 20.dp,
                 modifier = Modifier.align(Alignment.CenterEnd),
                 iconModifier = Modifier.graphicsLayer {
                     rotationZ = if (vm.isRefreshing) angle else pullState.distanceFraction.coerceIn(0f, 1.5f) * 240f
@@ -159,13 +172,7 @@ fun FeedTopBar(vm: MainViewModel, pullState: PullToRefreshState, topInset: Dp, o
             enter = slideInVertically { -it } + fadeIn(),
             exit = slideOutVertically { -it } + fadeOut(),
         ) {
-            GlassPill(
-                "${vm.pendingCount} nouvelles infos",
-                onClick = onRefresh,
-                icon = Icons.Rounded.ArrowUpward,
-                surface = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.18f),
-                height = 38.dp,
-            )
+            GlassCapsuleButton("${vm.pendingCount} nouvelles infos", onClick = onRefresh, icon = Icons.Rounded.ArrowUpward, height = 34.dp)
         }
 
         val message = vm.message
@@ -180,7 +187,7 @@ fun FeedTopBar(vm: MainViewModel, pullState: PullToRefreshState, topInset: Dp, o
             enter = slideInVertically { -it } + fadeIn(),
             exit = slideOutVertically { -it } + fadeOut(),
         ) {
-            GlassPill(message ?: "", onClick = { vm.clearMessage() }, height = 38.dp)
+            GlassCapsuleButton(message ?: "", onClick = { vm.clearMessage() }, height = 34.dp)
         }
     }
 }
