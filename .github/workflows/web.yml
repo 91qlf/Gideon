@@ -40,6 +40,30 @@ jobs:
           python3 tools/export_web_feed.py site
           du -sh site/data; ls site/data/a | wc -l
 
+      - name: Bundle the data for the iPhone app
+        run: |
+          mkdir -p feed-release
+          cp site/data/feed.json feed-release/feed.json
+          python3 - <<'PY'
+          import glob, json, os
+          bundle = {os.path.basename(p)[:-5]: json.load(open(p)) for p in glob.glob("site/data/a/*.json")}
+          json.dump(bundle, open("feed-release/articles.json", "w"), ensure_ascii=False, separators=(",", ":"))
+          print(len(bundle), "articles")
+          PY
+          ls -la feed-release
+
+      - name: Publish the data (used by the iPhone app when Pages is off)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: feed-data
+          name: Gideon data (auto)
+          prerelease: true
+          make_latest: false
+          body: Données publiées automatiquement toutes les 30 minutes pour l'app iPhone.
+          files: |
+            feed-release/feed.json
+            feed-release/articles.json
+
       - name: Preview screenshots (iPhone, real data)
         if: github.event_name != 'schedule'
         continue-on-error: true
@@ -63,6 +87,7 @@ jobs:
           files: web-shots/*
 
       - uses: actions/configure-pages@v5
+        continue-on-error: true
         with:
           enablement: true
 
@@ -73,6 +98,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    continue-on-error: true
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
