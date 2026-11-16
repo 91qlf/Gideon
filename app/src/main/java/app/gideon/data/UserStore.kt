@@ -1,0 +1,45 @@
+package app.gideon.data
+
+import android.content.Context
+import androidx.core.content.edit
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.json.Json
+
+class UserStore(context: Context) {
+    private val prefs = context.getSharedPreferences("gideon", Context.MODE_PRIVATE)
+    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+    private val savedSerializer = ListSerializer(NewsItem.serializer())
+    private val affinitySerializer = MapSerializer(String.serializer(), Float.serializer())
+
+    var liked: Set<String>
+        get() = prefs.getStringSet("liked", emptySet())?.toSet() ?: emptySet()
+        set(v) = prefs.edit { putStringSet("liked", v) }
+
+    var saved: List<NewsItem>
+        get() = runCatching { json.decodeFromString(savedSerializer, prefs.getString("saved", "[]")!!) }
+            .getOrDefault(emptyList())
+        set(v) = prefs.edit { putString("saved", json.encodeToString(savedSerializer, v)) }
+
+    var disabledGroups: Set<String>
+        get() = prefs.getStringSet("disabled", emptySet())?.toSet() ?: emptySet()
+        set(v) = prefs.edit { putStringSet("disabled", v) }
+
+    var affinity: Map<String, Float>
+        get() = runCatching { json.decodeFromString(affinitySerializer, prefs.getString("affinity", "{}")!!) }
+            .getOrDefault(emptyMap())
+        set(v) = prefs.edit { putString("affinity", json.encodeToString(affinitySerializer, v)) }
+
+    var dailyBrief: Boolean
+        get() = prefs.getBoolean("daily_brief", true)
+        set(v) = prefs.edit { putBoolean("daily_brief", v) }
+
+    var soundOn: Boolean
+        get() = prefs.getBoolean("sound_on", true)
+        set(v) = prefs.edit { putBoolean("sound_on", v) }
+
+    var askedNotifications: Boolean
+        get() = prefs.getBoolean("asked_notif", false)
+        set(v) = prefs.edit { putBoolean("asked_notif", v) }
+}
