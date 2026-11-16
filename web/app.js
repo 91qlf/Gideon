@@ -92,7 +92,7 @@
   function mix(items) {
     const now = Date.now() / 1000;
     const maxA = Math.max(1, ...Object.values(S.affinity));
-    const score = it => Math.exp(-((now - it.d) / 3600) / 14) * 10 + ((S.affinity[it.c] || 0) / maxA) * 3 + (it.c === 'UNE' ? 1.2 : 0);
+    const score = it => Math.exp(-((now - it.d) / 3600) / 14) * 10 + ((S.affinity[it.c] || 0) / maxA) * 3 + (it.c === 'UNE' ? 1.2 : 0) + (it.i ? 2 : 0);
     const arts = items.filter(i => !i.v).sort((a, b) => score(b) - score(a));
     const vids = items.filter(i => i.v).sort((a, b) => score(b) - score(a));
     const out = [];
