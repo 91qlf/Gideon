@@ -10,3 +10,4 @@ site/
 web-shots/
 node_modules/
 __pycache__/
+dist-ios/

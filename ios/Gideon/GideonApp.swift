@@ -16,14 +16,15 @@ struct GideonApp: App {
     }
 }
 
-enum AppTab: Hashable {
+enum AppTab: String, Hashable {
     case feed, saved, settings, search
 }
 
 struct RootView: View {
     @Environment(NewsStore.self) private var store
     @Environment(\.scenePhase) private var scenePhase
-    @State private var selection: AppTab = .feed
+    // Launch arguments (-GideonTab search…) only used by the simulator screenshot test.
+    @State private var selection: AppTab = AppTab(rawValue: UserDefaults.standard.string(forKey: "GideonTab") ?? "") ?? .feed
     @State private var reading: Story?
 
     var body: some View {
@@ -51,7 +52,15 @@ struct RootView: View {
             ReaderView(story: story)
         }
         .task {
+            if let raw = UserDefaults.standard.string(forKey: "GideonFeedTab"),
+               let tab = FeedTab.allCases.first(where: { String(describing: $0) == raw }) {
+                store.setFeedTab(tab)
+            }
             await store.refresh()
+            if UserDefaults.standard.bool(forKey: "GideonOpenFirst"),
+               let first = store.currentFeed.first(where: \.hasArticle) {
+                open(first)
+            }
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
