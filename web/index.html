@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Gideon</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="description" content="L'actu en scroll vertical, façon iOS.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Gideon">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#000000">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.2 12 3l9 7.2V20a1.5 1.5 0 0 1-1.5 1.5H15v-6.5H9v6.5H4.5A1.5 1.5 0 0 1 3 20Z"/></symbol>
+    <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M18.5 21.5 12 17l-6.5 4.5V5A2 2 0 0 1 7.5 3h9a2 2 0 0 1 2 2Z"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.8-4.8"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1 7.8 7.7 7.8-7.7 1-1.1a5.5 5.5 0 0 0 0-7.8Z"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><path d="M8 9H6.5A1.5 1.5 0 0 0 5 10.5v9A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 17.5 9H16"/><path d="M12 14V3m-3.5 3.5L12 3l3.5 3.5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M17 7 7 17M7 7l10 10"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></symbol>
+    <symbol id="i-sound" viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></symbol>
+    <symbol id="i-mute" viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4Z"/><path d="m22 9-6 6m0-6 6 6"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.6-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5Z"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M2.5 4h6a3.5 3.5 0 0 1 3.5 3.5V20a2.5 2.5 0 0 0-2.5-2.5h-7Z"/><path d="M21.5 4h-6A3.5 3.5 0 0 0 12 7.5V20a2.5 2.5 0 0 1 2.5-2.5h7Z"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+    <symbol id="i-safari" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="m15.5 8.5-2.2 4.8-4.8 2.2 2.2-4.8Z"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9.5 7V4.5h5V7M6 7l1 13a1.5 1.5 0 0 0 1.5 1.5h7A1.5 1.5 0 0 0 17 20l1-13"/></symbol>
+    <symbol id="i-text" viewBox="0 0 24 24"><path d="M3 19 8 6l5 13M4.8 14.5h6.4M14 19l3.5-8.5L21 19M15.2 16h4.6"/></symbol>
+    <symbol id="i-replay" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.7"/><path d="M4 4v5h5"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-cat-UNE" viewBox="0 0 24 24"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h10A1.5 1.5 0 0 1 17 5.5V19a1.5 1.5 0 0 0 3 0V9h-3"/><path d="M8 8h5M8 12h5M8 16h5"/></symbol>
+    <symbol id="i-cat-MONDE" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c2.6 2.6 3.8 6 3.8 9.5S14.6 18.9 12 21.5c-2.6-2.6-3.8-6-3.8-9.5S9.4 5.1 12 2.5Z"/></symbol>
+    <symbol id="i-cat-FRANCE" viewBox="0 0 24 24"><path d="M5 21V4m0 0c3-2 6 0 9 0s4-1 5-1v10c-1 0-2 1-5 1s-6-2-9 0"/></symbol>
+    <symbol id="i-cat-ECO" viewBox="0 0 24 24"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></symbol>
+    <symbol id="i-cat-TECH" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2.5"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></symbol>
+    <symbol id="i-cat-SCIENCES" viewBox="0 0 24 24"><path d="M9.5 3h5M10.5 3v6.2L4.8 18.6A1.6 1.6 0 0 0 6.2 21h11.6a1.6 1.6 0 0 0 1.4-2.4L13.5 9.2V3"/><path d="M7.5 15h9"/></symbol>
+    <symbol id="i-cat-SPORT" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="m12 7.5 4.3 3.1-1.6 5h-5.4l-1.6-5Z"/><path d="M12 2.5v5M21.2 9.6l-4.9 1M17.6 20l-2.9-4.4M6.4 20l2.9-4.4M2.8 9.6l4.9 1"/></symbol>
+    <symbol id="i-cat-CULTURE" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/></symbol>
+  </svg>
+
+  <div id="app">
+    <section id="screen-feed" class="screen active">
+      <div id="feed" class="feed"></div>
+      <header class="feed-top">
+        <div id="segmented" class="segmented glass">
+          <div class="seg-thumb"></div>
+          <button data-tab="foryou" class="on">Pour toi</button>
+          <button data-tab="videos">Vidéos</button>
+          <button data-tab="articles">Articles</button>
+        </div>
+        <button id="filter-chip" class="chip glass hidden"><svg class="ic"><use href="#i-x"/></svg><span></span></button>
+        <button id="refresh" class="circle glass" aria-label="Actualiser"><svg class="ic"><use href="#i-refresh"/></svg></button>
+      </header>
+      <div id="toast" class="toast glass hidden"></div>
+    </section>
+    <section id="screen-search" class="screen list"></section>
+    <section id="screen-saved" class="screen list"></section>
+    <section id="screen-settings" class="screen list grouped"></section>
+  </div>
+
+  <nav id="tabbar">
+    <div class="tabs glass">
+      <div class="tab-pill"></div>
+      <button class="tab on" data-screen="feed"><svg class="ic filled"><use href="#i-home"/></svg><span>À la une</span></button>
+      <button class="tab" data-screen="saved"><svg class="ic filled"><use href="#i-bookmark"/></svg><span>Gardés</span></button>
+      <button class="tab" data-screen="settings"><svg class="ic"><use href="#i-gear"/></svg><span>Réglages</span></button>
+      <button class="tab-folded" aria-label="Retour"><svg class="ic filled"><use href="#i-home"/></svg></button>
+    </div>
+    <label class="searchbox glass">
+      <svg class="ic"><use href="#i-search"/></svg>
+      <input id="q" type="search" placeholder="Rechercher" enterkeyhint="search" autocomplete="off" autocorrect="off">
+      <button id="q-clear" class="hidden" aria-label="Effacer"><svg class="ic"><use href="#i-x"/></svg></button>
+    </label>
+  </nav>
+
+  <div id="sheet" class="sheet-host" aria-hidden="true">
+    <div class="sheet-dim"></div>
+    <div class="sheet">
+      <div class="grabber"><span></span></div>
+      <div class="sheet-bar">
+        <button class="circle glass" data-act="close" aria-label="Fermer"><svg class="ic"><use href="#i-x"/></svg></button>
+        <span class="grow"></span>
+        <button class="circle glass" data-act="text" aria-label="Taille du texte"><svg class="ic"><use href="#i-text"/></svg></button>
+        <button class="circle glass" data-act="share" aria-label="Partager"><svg class="ic"><use href="#i-share"/></svg></button>
+        <button class="circle glass" data-act="save" aria-label="Garder"><svg class="ic"><use href="#i-bookmark"/></svg></button>
+      </div>
+      <div class="sheet-scroll"></div>
+    </div>
+  </div>
+
+  <div id="splash">
+    <svg viewBox="0 0 108 108" class="logo"><g fill="none" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path transform="translate(-1.8,-1.4)" d="M67.44,40.56 A19,19 0 1,0 73,54 L56,54" stroke="#2FE6FF"/><path transform="translate(1.8,1.4)" d="M67.44,40.56 A19,19 0 1,0 73,54 L56,54" stroke="#FF2D6F"/><path d="M67.44,40.56 A19,19 0 1,0 73,54 L56,54" stroke="#fff"/></g></svg>
+    <div class="spinner"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+name: Web app (GitHub Pages)
+
+on:
+  push:
+    branches: ["claude/gracious-hawking-2xnseh"]
+    paths:
+      - "web/**"
+      - "tools/**"
+      - "app/src/main/assets/sources.json"
+      - ".github/workflows/web.yml"
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch the news and extract articles
+        run: |
+          pip install --quiet feedparser==6.0.14 trafilatura==2.3.1 requests
+          mkdir -p site
+          cp -r web/. site/
+          python3 tools/export_web_feed.py site
+          du -sh site/data; ls site/data/a | wc -l
+
+      - name: Preview screenshots (iPhone, real data)
+        if: github.event_name != 'schedule'
+        continue-on-error: true
+        run: |
+          npm install --no-save --silent playwright@1.49.1
+          npx playwright install --with-deps chromium > /dev/null
+          (cd site && python3 -m http.server 8765 --bind 127.0.0.1 > /dev/null 2>&1 &)
+          sleep 2
+          node tools/web_preview.js web-shots
+
+      - name: Publish screenshots
+        if: github.event_name != 'schedule'
+        continue-on-error: true
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: web-preview
+          name: Web preview (CI)
+          prerelease: true
+          make_latest: false
+          body: Captures de Gideon Web avec les vraies données.
+          files: web-shots/*
+
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

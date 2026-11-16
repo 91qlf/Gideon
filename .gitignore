@@ -6,3 +6,6 @@ local.properties
 .DS_Store
 captures/
 .kotlin/
+site/
+web-shots/
+node_modules/
