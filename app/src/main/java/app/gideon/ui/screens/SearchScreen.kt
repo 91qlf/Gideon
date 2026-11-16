@@ -128,6 +128,7 @@ private fun CategoryGrid(counts: Map<Category, Int>, onOpen: (Category) -> Unit)
         Category.entries.chunked(2).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 row.forEach { cat -> CategoryTile(cat, counts[cat] ?: 0, { onOpen(cat) }, Modifier.weight(1f)) }
+                if (row.size == 1) Spacer(Modifier.weight(1f))
             }
         }
     }

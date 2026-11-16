@@ -11,7 +11,8 @@
   const ic = (name, cls = '') => `<svg class="ic ${cls}"><use href="#i-${name}"/></svg>`;
   const favicon = d => `https://www.google.com/s2/favicons?domain=${encodeURIComponent(d || '')}&sz=128`;
   const CATS = {
-    UNE: ['À la une', '#ff375f'], MONDE: ['Monde', '#0a84ff'], FRANCE: ['France', '#5e5ce6'], ECO: ['Économie', '#30d158'],
+    UNE: ['À la une', '#ff375f'], MONDE: ['Monde', '#0a84ff'], FRANCE: ['France', '#5e5ce6'], POLITIQUE: ['Politique', '#ac8e68'],
+    ECO: ['Économie', '#30d158'],
     TECH: ['Tech', '#bf5af2'], SCIENCES: ['Sciences', '#40cbe0'], SPORT: ['Sport', '#ff9f0a'], CULTURE: ['Culture', '#ff2d55'],
   };
   const TABS = ['feed', 'saved', 'settings'];

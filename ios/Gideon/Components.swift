@@ -67,6 +67,7 @@ extension NewsCategory {
         case .une: return .pink
         case .monde: return .blue
         case .france: return .indigo
+        case .politique: return .brown
         case .eco: return .green
         case .tech: return .purple
         case .sciences: return .teal

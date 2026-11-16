@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.Euro
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Flag
@@ -88,6 +89,7 @@ fun Category.style(): CategoryStyle = when (this) {
     Category.UNE -> CategoryStyle(Icons.Rounded.Newspaper, Color(0xFFFF375F))
     Category.MONDE -> CategoryStyle(Icons.Rounded.Public, Color(0xFF0A84FF))
     Category.FRANCE -> CategoryStyle(Icons.Rounded.Flag, Color(0xFF5E5CE6))
+    Category.POLITIQUE -> CategoryStyle(Icons.Rounded.AccountBalance, Color(0xFFAC8E68))
     Category.ECO -> CategoryStyle(Icons.Rounded.Euro, Color(0xFF30D158))
     Category.TECH -> CategoryStyle(Icons.Rounded.Memory, Color(0xFFBF5AF2))
     Category.SCIENCES -> CategoryStyle(Icons.Rounded.Science, Color(0xFF40CBE0))

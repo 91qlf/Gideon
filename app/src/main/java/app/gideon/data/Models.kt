@@ -36,6 +36,7 @@ enum class Category(val label: String) {
     UNE("À la une"),
     MONDE("Monde"),
     FRANCE("France"),
+    POLITIQUE("Politique"),
     ECO("Économie"),
     TECH("Tech"),
     SCIENCES("Sciences"),

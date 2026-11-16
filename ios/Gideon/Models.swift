@@ -46,7 +46,7 @@ struct Story: Codable, Identifiable, Hashable {
 }
 
 enum NewsCategory: String, CaseIterable, Identifiable {
-    case une = "UNE", monde = "MONDE", france = "FRANCE", eco = "ECO"
+    case une = "UNE", monde = "MONDE", france = "FRANCE", politique = "POLITIQUE", eco = "ECO"
     case tech = "TECH", sciences = "SCIENCES", sport = "SPORT", culture = "CULTURE"
 
     var id: String { rawValue }
@@ -56,6 +56,7 @@ enum NewsCategory: String, CaseIterable, Identifiable {
         case .une: return "À la une"
         case .monde: return "Monde"
         case .france: return "France"
+        case .politique: return "Politique"
         case .eco: return "Économie"
         case .tech: return "Tech"
         case .sciences: return "Sciences"
@@ -69,6 +70,7 @@ enum NewsCategory: String, CaseIterable, Identifiable {
         case .une: return "newspaper.fill"
         case .monde: return "globe.europe.africa.fill"
         case .france: return "flag.fill"
+        case .politique: return "building.columns.fill"
         case .eco: return "chart.line.uptrend.xyaxis"
         case .tech: return "cpu.fill"
         case .sciences: return "flask.fill"

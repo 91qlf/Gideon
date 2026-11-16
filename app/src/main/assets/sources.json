@@ -179,6 +179,21 @@
    "id": "arte",
    "name": "ARTE",
    "domain": "arte.tv"
+  },
+  {
+   "id": "publicsenat",
+   "name": "Public Sénat",
+   "domain": "publicsenat.fr"
+  },
+  {
+   "id": "lcp",
+   "name": "LCP",
+   "domain": "lcp.fr"
+  },
+  {
+   "id": "sudouest",
+   "name": "Sud Ouest",
+   "domain": "sudouest.fr"
   }
  ],
  "feeds": [
@@ -197,7 +212,7 @@
   {
    "publisher": "lemonde",
    "kind": "rss",
-   "category": "FRANCE",
+   "category": "POLITIQUE",
    "url": "https://www.lemonde.fr/politique/rss_full.xml"
   },
   {
@@ -251,7 +266,7 @@
   {
    "publisher": "franceinfo",
    "kind": "rss",
-   "category": "FRANCE",
+   "category": "POLITIQUE",
    "url": "https://www.francetvinfo.fr/politique.rss"
   },
   {
@@ -341,7 +356,7 @@
   {
    "publisher": "lefigaro",
    "kind": "rss",
-   "category": "FRANCE",
+   "category": "POLITIQUE",
    "url": "https://www.lefigaro.fr/rss/figaro_politique.xml"
   },
   {
@@ -389,7 +404,7 @@
   {
    "publisher": "liberation",
    "kind": "rss",
-   "category": "FRANCE",
+   "category": "POLITIQUE",
    "url": "https://www.liberation.fr/arc/outboundfeeds/rss-all/category/politique/?outputType=xml"
   },
   {
@@ -443,7 +458,7 @@
   {
    "publisher": "bfmtv",
    "kind": "rss",
-   "category": "FRANCE",
+   "category": "POLITIQUE",
    "url": "https://www.bfmtv.com/rss/politique/"
   },
   {
@@ -621,6 +636,60 @@
    "url": "https://rss.rtbf.be/article/rss/highlight_rtbf_info.xml"
   },
   {
+   "publisher": "20minutes",
+   "kind": "rss",
+   "category": "POLITIQUE",
+   "url": "https://www.20minutes.fr/feeds/rss-politique.xml"
+  },
+  {
+   "publisher": "lexpress",
+   "kind": "rss",
+   "category": "POLITIQUE",
+   "url": "https://www.lexpress.fr/arc/outboundfeeds/rss/politique.xml"
+  },
+  {
+   "publisher": "lobs",
+   "kind": "rss",
+   "category": "POLITIQUE",
+   "url": "https://www.nouvelobs.com/politique/rss.xml"
+  },
+  {
+   "publisher": "huffpost",
+   "kind": "rss",
+   "category": "POLITIQUE",
+   "url": "https://www.huffingtonpost.fr/politique/rss_headline.xml"
+  },
+  {
+   "publisher": "leparisien",
+   "kind": "rss",
+   "category": "POLITIQUE",
+   "url": "https://feeds.leparisien.fr/leparisien/rss/politique"
+  },
+  {
+   "publisher": "publicsenat",
+   "kind": "rss",
+   "category": "POLITIQUE",
+   "url": "https://www.publicsenat.fr/feed"
+  },
+  {
+   "publisher": "lcp",
+   "kind": "rss",
+   "category": "POLITIQUE",
+   "url": "https://lcp.fr/rss.xml"
+  },
+  {
+   "publisher": "sudouest",
+   "kind": "rss",
+   "category": "POLITIQUE",
+   "url": "https://www.sudouest.fr/politique/rss.xml"
+  },
+  {
+   "publisher": "rfi",
+   "kind": "rss",
+   "category": "FRANCE",
+   "url": "https://www.rfi.fr/fr/france/rss"
+  },
+  {
    "publisher": "franceinfo",
    "kind": "youtube",
    "category": "UNE",
@@ -667,6 +736,12 @@
    "kind": "youtube",
    "category": "MONDE",
    "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCW2QcKZiU8aUGg4yxCIditg"
+  },
+  {
+   "publisher": "publicsenat",
+   "kind": "youtube",
+   "category": "POLITIQUE",
+   "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCTa1bPArjpvNMgSHAb_pflA"
   }
  ]
 }
