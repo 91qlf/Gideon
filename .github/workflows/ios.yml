@@ -1,0 +1,82 @@
+name: Build iOS (IPA)
+
+on:
+  push:
+    branches: ["claude/gracious-hawking-2xnseh"]
+    paths:
+      - "ios/**"
+      - ".github/workflows/ios.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ipa:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pick the newest Xcode
+        run: |
+          ls -d /Applications/Xcode*.app || true
+          XC=$(ls -d /Applications/Xcode_*.app | grep -vi beta | sort -V | tail -1)
+          echo "Using $XC"
+          sudo xcode-select -s "$XC/Contents/Developer"
+          xcodebuild -version
+          xcodebuild -showsdks | grep -i iphoneos || true
+
+      - name: Generate the Xcode project
+        working-directory: ios
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Build (unsigned, for sideloading)
+        working-directory: ios
+        run: |
+          set +e
+          xcodebuild -project Gideon.xcodeproj -target Gideon -configuration Release -sdk iphoneos \
+            SYMROOT="$PWD/build" CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build > build.log 2>&1
+          status=$?
+          grep -E "(error|warning): " build.log | sort -u | head -100
+          if [ $status -ne 0 ]; then tail -80 build.log; exit $status; fi
+
+      - name: Package the .ipa
+        working-directory: ios
+        run: |
+          APP=build/Release-iphoneos/Gideon.app
+          test -d "$APP"
+          mkdir -p Payload
+          cp -R "$APP" Payload/
+          zip -qry "Gideon-iOS-1.0.${{ github.run_number }}.ipa" Payload
+          ls -la ./*.ipa
+
+      - name: Keep the build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-log
+          path: ios/build.log
+          if-no-files-found: ignore
+
+      - name: Publish the .ipa
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ios-v1.0.${{ github.run_number }}
+          name: Gideon iOS 1.0.${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          prerelease: true
+          make_latest: false
+          files: ios/Gideon-iOS-1.0.${{ github.run_number }}.ipa
+          body: |
+            Application iPhone native (SwiftUI, Liquid Glass sur iOS 26), non signée.
+            À installer avec AltStore, SideStore, Sideloadly ou un autre outil de sideload : il la signe avec ton identifiant Apple.
+            iOS 18 minimum.

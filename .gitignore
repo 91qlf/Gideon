@@ -9,3 +9,4 @@ captures/
 site/
 web-shots/
 node_modules/
+__pycache__/

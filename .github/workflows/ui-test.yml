@@ -3,7 +3,7 @@ name: UI test (emulator)
 on:
   push:
     branches: ["**"]
-    paths-ignore: ["README.md"]
+    paths-ignore: ["README.md", "ios/**", "web/**", "tools/**", ".github/workflows/ios.yml", ".github/workflows/web.yml"]
   workflow_dispatch:
 
 concurrency:
