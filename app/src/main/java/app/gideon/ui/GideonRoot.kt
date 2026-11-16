@@ -155,7 +155,7 @@ fun GideonRoot() {
                         topInset = topInset,
                         bottomSpace = tabBarSpace,
                         onDailyBriefChange = { on ->
-                            vm.setDailyBrief(on)
+                            vm.updateDailyBrief(on)
                             if (on) ensureNotificationPermission()
                         },
                     )

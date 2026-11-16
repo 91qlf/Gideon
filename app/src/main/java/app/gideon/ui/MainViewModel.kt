@@ -165,7 +165,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setSound(on: Boolean) { soundOn = on; store.soundOn = on }
 
-    fun setDailyBrief(on: Boolean) {
+    fun updateDailyBrief(on: Boolean) {
         dailyBrief = on
         store.dailyBrief = on
         if (on) DailyBriefWorker.schedule(gideon) else DailyBriefWorker.cancel(gideon)
