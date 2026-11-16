@@ -15,6 +15,7 @@ class GideonApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        CrashLog.install(this)
         store = UserStore(this)
         val catalog = SourceCatalog.fromJson(assets.open("sources.json").bufferedReader().use { it.readText() })
         repository = NewsRepository(this, catalog)

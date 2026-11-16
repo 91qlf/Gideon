@@ -49,12 +49,17 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -65,6 +70,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import app.gideon.CrashLog
 import app.gideon.data.NewsItem
 import app.gideon.ui.feed.FeedScreen
 import app.gideon.ui.feed.FeedTopBar
@@ -76,6 +82,8 @@ import app.gideon.ui.glass.LocalGlassDark
 import app.gideon.ui.glass.LocalHighlightAngle
 import app.gideon.ui.glass.TabItem
 import app.gideon.ui.glass.rememberHighlightAngle
+import app.gideon.ui.ios.BottomEdgeFade
+import app.gideon.ui.ios.IosAlert
 import app.gideon.ui.reader.ReaderSheet
 import app.gideon.ui.screens.SavedScreen
 import app.gideon.ui.screens.SearchScreen
@@ -128,6 +136,7 @@ fun GideonRoot() {
     val sheet = remember { Animatable(0f) }
     val sheetDrag = remember { Animatable(0f) }
 
+    var crashReport by remember { mutableStateOf(CrashLog.read(context)) }
     val pagerState = rememberPagerState { vm.currentFeed.size }
     val pullState = rememberPullToRefreshState()
 
@@ -141,6 +150,21 @@ fun GideonRoot() {
 
     val screen = if (searchActive) SEARCH else tab
     val onFeed = screen == 0
+
+    // iOS 26: scrolling down a list folds the tab bar, scrolling up brings it back.
+    var barMinimized by remember { mutableStateOf(false) }
+    LaunchedEffect(screen) { barMinimized = false }
+    val listScreen by rememberUpdatedState(!onFeed)
+    val minimizeOnScroll = remember {
+        object : NestedScrollConnection {
+            override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+                if (listScreen && source == NestedScrollSource.UserInput) {
+                    if (consumed.y < -8f) barMinimized = true else if (consumed.y > 8f) barMinimized = false
+                }
+                return Offset.Zero
+            }
+        }
+    }
 
     fun openReader(item: NewsItem) {
         focus.clearFocus()
@@ -238,6 +262,7 @@ fun GideonRoot() {
                     Modifier
                         .fillMaxSize()
                         .background(if (onFeed) Color.Black else palette.background)
+                        .nestedScroll(minimizeOnScroll)
                         .layerBackdrop(rootBackdrop)
                 ) {
                     AnimatedContent(
@@ -307,12 +332,17 @@ fun GideonRoot() {
                             if (vm.pendingCount > 0) vm.applyPending() else vm.refresh(manual = true)
                         })
                     }
+                    if (!onFeed) {
+                        BottomEdgeFade(palette, tabBarSpace + 28.dp, Modifier.align(Alignment.BottomCenter))
+                    }
                     IosTabBar(
                         tabs = tabs,
                         selected = tab,
                         searchActive = searchActive,
+                        minimized = barMinimized && !searchActive,
                         onSelect = { i ->
                             focus.clearFocus()
+                            barMinimized = false
                             if (!searchActive && i == tab && i == 0) {
                                 if (vm.categoryFilter != null || vm.publisherFilter != null) vm.openCategory(null)
                                 else scope.launch { pagerState.animateScrollToPage(0) }
@@ -378,6 +408,30 @@ fun GideonRoot() {
                 exit = fadeOut(tween(450)),
             ) {
                 SplashView(Modifier.background(Color.Black))
+            }
+
+            crashReport?.let { report ->
+                IosAlert(
+                    title = "Gideon s'est fermé",
+                    message = "L'app a planté la dernière fois. Partage le rapport pour qu'on corrige le problème.",
+                    palette = palette,
+                    confirmLabel = "Partager",
+                    onConfirm = {
+                        CrashLog.clear(context)
+                        crashReport = null
+                        val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(android.content.Intent.EXTRA_SUBJECT, "Rapport de plantage Gideon")
+                            putExtra(android.content.Intent.EXTRA_TEXT, report)
+                        }
+                        context.startActivity(android.content.Intent.createChooser(send, "Partager le rapport"))
+                    },
+                    dismissLabel = "Ignorer",
+                    onDismiss = {
+                        CrashLog.clear(context)
+                        crashReport = null
+                    },
+                )
             }
         }
     }

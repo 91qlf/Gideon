@@ -39,6 +39,10 @@ class UserStore(context: Context) {
         get() = prefs.getBoolean("sound_on", true)
         set(v) = prefs.edit { putBoolean("sound_on", v) }
 
+    var includeShorts: Boolean
+        get() = prefs.getBoolean("include_shorts", false)
+        set(v) = prefs.edit { putBoolean("include_shorts", v) }
+
     var textScale: Float
         get() = prefs.getFloat("text_scale", 1f)
         set(v) = prefs.edit { putFloat("text_scale", v) }

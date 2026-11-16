@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Smartphone
 import androidx.compose.material.icons.rounded.TextFields
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -66,6 +67,16 @@ fun SettingsScreen(
                     RowSeparator(palette)
                     IosRow("Son des vidéos", palette, icon = Icons.AutoMirrored.Rounded.VolumeUp, iconColor = palette.blue) {
                         GlassSwitch(vm.soundOn, vm::setSound, onColor = palette.green, offColor = palette.fill)
+                    }
+                    RowSeparator(palette)
+                    IosRow(
+                        "YouTube Shorts",
+                        palette,
+                        icon = Icons.Rounded.Smartphone,
+                        iconColor = palette.red,
+                        subtitle = "Vidéos verticales courtes",
+                    ) {
+                        GlassSwitch(vm.includeShorts, vm::updateIncludeShorts, onColor = palette.green, offColor = palette.fill)
                     }
                     RowSeparator(palette)
                     IosRow(

@@ -43,6 +43,7 @@ import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.IosShare
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Replay
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -70,6 +71,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.gideon.data.Category
@@ -172,7 +174,7 @@ fun NewsPage(
         CompositionLocalProvider(LocalBackdrop provides pageBackdrop, LocalGlassDark provides true) {
             if (item.isVideo) {
                 AnimatedVisibility(
-                    visible = controller.started && !controller.isPlaying,
+                    visible = controller.userPaused && !controller.ended,
                     enter = scaleIn(initialScale = 1.5f) + fadeIn(),
                     exit = scaleOut(targetScale = 0.6f) + fadeOut(),
                     modifier = Modifier.align(Alignment.Center),
@@ -181,6 +183,14 @@ fun NewsPage(
                         Modifier.size(72.dp).liquidGlass(Capsule(), GlassVariant.Clear),
                         contentAlignment = Alignment.Center,
                     ) { Icon(Icons.Rounded.PlayArrow, "Lecture", tint = Color.White, modifier = Modifier.size(38.dp)) }
+                }
+                AnimatedVisibility(
+                    visible = controller.ended,
+                    enter = scaleIn(initialScale = 0.7f) + fadeIn(),
+                    exit = fadeOut(),
+                    modifier = Modifier.align(Alignment.Center),
+                ) {
+                    GlassCapsuleButton("Revoir", onClick = { controller.replay() }, icon = Icons.Rounded.Replay, height = 44.dp)
                 }
                 if (controller.failed) {
                     GlassCapsuleButton(
@@ -235,7 +245,7 @@ fun NewsPage(
                 controller,
                 Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = bottomSpace - 18.dp, start = 18.dp, end = 18.dp),
+                    .padding(bottom = (bottomSpace - 18.dp).coerceAtLeast(0.dp), start = 18.dp, end = 18.dp),
             )
         }
 
@@ -303,7 +313,7 @@ private fun clock(seconds: Float): String {
 @Composable
 private fun ArticleHero(item: NewsItem, imageUrl: String?, active: Boolean, pageOffset: () -> Float) {
     val zoom by animateFloatAsState(
-        if (active) 1.1f else 1f,
+        if (active) 1.14f else 1.06f,
         if (active) tween(14000, easing = LinearEasing) else snap(),
         label = "kenburns",
     )
@@ -321,8 +331,9 @@ private fun ArticleHero(item: NewsItem, imageUrl: String?, active: Boolean, page
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(heroHeight)
+                    .clipToBounds()
                     .graphicsLayer {
-                        translationY = pageOffset() * size.height * 0.3f
+                        translationY = pageOffset() * size.height * 0.18f
                         scaleX = zoom
                         scaleY = zoom
                     },

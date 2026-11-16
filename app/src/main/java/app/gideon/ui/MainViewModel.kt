@@ -37,6 +37,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val store = gideon.store
     val catalog get() = repo.catalog
 
+    /** Everything fetched; [allItems] is what the user wants to see (Shorts filtered out by default). */
+    private var rawItems: List<NewsItem> = emptyList()
     var allItems by mutableStateOf<List<NewsItem>>(emptyList()); private set
     private var forYou by mutableStateOf<List<NewsItem>>(emptyList())
     var hasLoaded by mutableStateOf(false); private set
@@ -58,6 +60,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var soundOn by mutableStateOf(store.soundOn); private set
     var dailyBrief by mutableStateOf(store.dailyBrief); private set
     var textScale by mutableFloatStateOf(store.textScale); private set
+    var includeShorts by mutableStateOf(store.includeShorts); private set
 
     var feedTab by mutableStateOf(FeedTab.FOR_YOU); private set
     var categoryFilter by mutableStateOf<Category?>(null); private set
@@ -96,16 +99,24 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun setItems(items: List<NewsItem>) {
-        allItems = items
-        forYou = FeedMixer.forYou(items, store.affinity)
+        rawItems = items
+        val visible = if (includeShorts) items else items.filterNot { it.isShort }
+        allItems = visible
+        forYou = FeedMixer.forYou(visible, store.affinity)
         feedVersion++
+    }
+
+    fun updateIncludeShorts(on: Boolean) {
+        includeShorts = on
+        store.includeShorts = on
+        setItems(rawItems)
     }
 
     fun refresh(manual: Boolean = true) {
         if (isRefreshing) return
         isRefreshing = true
         viewModelScope.launch {
-            val before = allItems.mapTo(HashSet()) { it.id }
+            val before = rawItems.mapTo(HashSet()) { it.id }
             val result = repo.refresh(disabledGroups)
             if (result != null) {
                 val fresh = result.items.count { it.id !in before }
@@ -218,7 +229,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val key = "$kind:$publisher"
         disabledGroups = if (enabled) disabledGroups - key else disabledGroups + key
         store.disabledGroups = disabledGroups
-        if (!enabled) setItems(allItems.filter { it.groupKey != key }) else refresh(manual = false)
+        if (!enabled) setItems(rawItems.filter { it.groupKey != key }) else refresh(manual = false)
     }
 
     var shouldAskNotifications: Boolean

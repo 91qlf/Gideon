@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -22,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,6 +36,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
@@ -254,4 +257,106 @@ fun PublisherLogo(name: String, domain: String, size: Dp, modifier: Modifier = M
             )
         }
     }
+}
+
+/** UIActivityIndicatorView: eight rounded spokes fading around the circle. */
+@Composable
+fun IosActivityIndicator(modifier: Modifier = Modifier, color: Color = Color.White, diameter: Dp = 22.dp) {
+    val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "spinner")
+    val step by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 8f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            androidx.compose.animation.core.tween(800, easing = androidx.compose.animation.core.LinearEasing)
+        ),
+        label = "step",
+    )
+    androidx.compose.foundation.Canvas(modifier.size(diameter)) {
+        val spokes = 8
+        val head = step.toInt() % spokes
+        val stroke = this.size.minDimension * 0.095f
+        for (i in 0 until spokes) {
+            val age = (head - i + spokes) % spokes
+            val alpha = 1f - age / spokes.toFloat() * 0.85f
+            rotate(i * 360f / spokes, center) {
+                drawLine(
+                    color = color.copy(alpha = alpha),
+                    start = Offset(center.x, this.size.height * 0.10f),
+                    end = Offset(center.x, this.size.height * 0.32f),
+                    strokeWidth = stroke,
+                    cap = androidx.compose.ui.graphics.StrokeCap.Round,
+                )
+            }
+        }
+    }
+}
+
+/** iOS 26 alert: rounded card, centred text, capsule buttons. */
+@Composable
+fun IosAlert(
+    title: String,
+    message: String,
+    palette: Palette,
+    confirmLabel: String,
+    onConfirm: () -> Unit,
+    dismissLabel: String,
+    onDismiss: () -> Unit,
+) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.4f))
+            .clickable(remember { MutableInteractionSource() }, indication = null) { },
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            Modifier
+                .padding(horizontal = 40.dp)
+                .fillMaxWidth()
+                .clip(RoundedRectangle(34.dp))
+                .background(if (palette.dark) Color(0xFF2C2C2E) else Color(0xFFF2F2F7))
+                .padding(start = 20.dp, end = 20.dp, top = 22.dp, bottom = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(title, style = Ios.headline, color = palette.label, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(6.dp))
+            Text(message, style = Ios.footnote, color = palette.label.copy(alpha = 0.85f), textAlign = TextAlign.Center)
+            Spacer(Modifier.height(18.dp))
+            Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(10.dp)) {
+                AlertButton(dismissLabel, palette.fill, palette.label, Modifier.weight(1f), onDismiss)
+                AlertButton(confirmLabel, palette.blue, Color.White, Modifier.weight(1f), onConfirm)
+            }
+        }
+    }
+}
+
+@Composable
+private fun AlertButton(text: String, fill: Color, content: Color, modifier: Modifier, onClick: () -> Unit) {
+    Box(
+        modifier
+            .height(46.dp)
+            .clip(com.kyant.shapes.Capsule())
+            .background(fill)
+            .clickable(remember { MutableInteractionSource() }, indication = null, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text, style = Ios.headline, color = content, maxLines = 1)
+    }
+}
+
+/** iOS 26 "scroll edge effect" under the floating tab bar. */
+@Composable
+fun BottomEdgeFade(palette: Palette, height: Dp, modifier: Modifier = Modifier) {
+    Box(
+        modifier
+            .fillMaxWidth()
+            .height(height)
+            .background(
+                Brush.verticalGradient(
+                    0f to palette.background.copy(alpha = 0f),
+                    0.55f to palette.background.copy(alpha = 0.55f),
+                    1f to palette.background.copy(alpha = 0.92f),
+                )
+            )
+    )
 }

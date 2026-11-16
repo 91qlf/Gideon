@@ -38,6 +38,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,7 +51,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -93,19 +97,39 @@ fun IosTabBar(
     onQueryChange: (String) -> Unit,
     accent: Color,
     modifier: Modifier = Modifier,
+    minimized: Boolean = false,
 ) {
     val dark = LocalGlassDark.current
     val labelColor = if (dark) Color.White else Color.Black
-    val sp by animateFloatAsState(
+    val morph by animateFloatAsState(
         if (searchActive) 1f else 0f,
         spring(dampingRatio = 0.82f, stiffness = 360f),
         label = "search",
     )
+    // The spring overshoots slightly: clamp so sizes/paddings never go negative.
+    val sp = morph.coerceIn(0f, 1f)
+    // iOS 26: the tab bar folds to the current tab while scrolling down a list.
+    val fold by animateFloatAsState(
+        if (searchActive || minimized) 1f else 0f,
+        spring(dampingRatio = 0.82f, stiffness = 360f),
+        label = "fold",
+    )
+    val fp = fold.coerceIn(0f, 1f)
+    val focusRequester = remember { FocusRequester() }
+    val keyboard = LocalSoftwareKeyboardController.current
+    LaunchedEffect(searchActive) {
+        if (searchActive) {
+            // Open the keyboard straight away, like tapping Search on iOS.
+            withFrameNanos { }
+            runCatching { focusRequester.requestFocus() }
+            keyboard?.show()
+        }
+    }
     BoxWithConstraints(modifier.fillMaxWidth().height(BarHeight)) {
         val gap = 10.dp
         val circle = BarHeight
         val wide = maxWidth - gap - circle
-        val tabsWidth = lerp(wide, circle, sp)
+        val tabsWidth = lerp(wide, circle, fp)
         val searchWidth = lerp(circle, wide, sp)
 
         // Tabs capsule (folds into a circle showing the current tab while searching)
@@ -116,21 +140,21 @@ fun IosTabBar(
                 .fillMaxHeight()
                 .liquidGlass(Capsule())
         ) {
-            if (sp < 0.98f) {
+            if (fp < 0.98f) {
                 TabsRow(
                     tabs = tabs,
                     selected = selected,
                     onSelect = onSelect,
                     accent = accent,
                     labelColor = labelColor,
-                    modifier = Modifier.fillMaxSize().graphicsLayer { alpha = (1f - sp * 1.8f).coerceIn(0f, 1f) },
+                    modifier = Modifier.fillMaxSize().graphicsLayer { alpha = (1f - fp * 1.8f).coerceIn(0f, 1f) },
                 )
             }
-            if (sp > 0.02f) {
+            if (fp > 0.02f) {
                 Box(
                     Modifier
                         .fillMaxSize()
-                        .graphicsLayer { alpha = ((sp - 0.3f) / 0.7f).coerceIn(0f, 1f) }
+                        .graphicsLayer { alpha = ((fp - 0.3f) / 0.7f).coerceIn(0f, 1f) }
                         .clickable(remember { MutableInteractionSource() }, indication = null) { onSelect(selected) },
                     contentAlignment = Alignment.Center,
                 ) {
@@ -159,7 +183,7 @@ fun IosTabBar(
                 tint = if (sp > 0.5f) labelColor.copy(alpha = 0.6f) else labelColor,
                 modifier = Modifier.size(lerp(24.dp, 21.dp, sp)),
             )
-            if (sp > 0.05f) {
+            if (searchActive || sp > 0.05f) {
                 Spacer(Modifier.width(8.dp))
                 Box(Modifier.weight(1f).graphicsLayer { alpha = ((sp - 0.4f) / 0.6f).coerceIn(0f, 1f) }) {
                     if (query.isEmpty()) {
@@ -173,7 +197,7 @@ fun IosTabBar(
                         cursorBrush = SolidColor(accent),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                         keyboardActions = KeyboardActions(onSearch = { focus.clearFocus() }),
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
                     )
                 }
                 if (query.isNotEmpty()) {

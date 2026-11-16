@@ -1,11 +1,6 @@
 package app.gideon.ui.feed
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -47,6 +42,12 @@ import app.gideon.ui.MainViewModel
 import app.gideon.ui.glass.GlassCapsuleButton
 import app.gideon.ui.glass.GlassIconButton
 import app.gideon.ui.glass.GlassSegmented
+import app.gideon.ui.glass.glassTouch
+import app.gideon.ui.glass.liquidGlass
+import app.gideon.ui.glass.rememberGlassInteraction
+import app.gideon.ui.ios.IosActivityIndicator
+import com.kyant.shapes.Capsule
+import androidx.compose.material3.Icon
 import app.gideon.ui.theme.Ios
 import kotlinx.coroutines.delay
 
@@ -67,7 +68,23 @@ fun FeedScreen(
         onRefresh = { vm.refresh(manual = true) },
         state = pullState,
         modifier = Modifier.fillMaxSize(),
-        indicator = {},
+        indicator = {
+            val f = pullState.distanceFraction.coerceIn(0f, 1f)
+            if (f > 0.02f || vm.isRefreshing) {
+                IosActivityIndicator(
+                    diameter = 26.dp,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = topSpace + 12.dp)
+                        .graphicsLayer {
+                            val v = if (vm.isRefreshing) 1f else f
+                            alpha = v
+                            scaleX = 0.6f + 0.4f * v
+                            scaleY = 0.6f + 0.4f * v
+                        },
+                )
+            }
+        },
     ) {
         if (items.isEmpty()) {
             EmptyFeed(vm)
@@ -106,8 +123,8 @@ fun FeedScreen(
 private fun EmptyFeed(vm: MainViewModel) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
-            GideonLogo(Modifier.size(88.dp))
-            Spacer(Modifier.height(12.dp))
+            if (vm.isRefreshing) IosActivityIndicator(diameter = 30.dp) else GideonLogo(Modifier.size(88.dp))
+            Spacer(Modifier.height(14.dp))
             Text(
                 when {
                     vm.isRefreshing -> "Chargement de l'actu…"
@@ -126,13 +143,36 @@ private fun EmptyFeed(vm: MainViewModel) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RefreshButton(vm: MainViewModel, pullState: PullToRefreshState, onRefresh: () -> Unit, modifier: Modifier) {
+    val interaction = rememberGlassInteraction()
+    Box(
+        modifier
+            .size(38.dp)
+            .liquidGlass(Capsule(), interaction = interaction)
+            .glassTouch(interaction, enabled = !vm.isRefreshing, onClick = onRefresh),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (vm.isRefreshing) {
+            IosActivityIndicator(diameter = 20.dp)
+        } else {
+            Icon(
+                Icons.Rounded.Refresh,
+                "Actualiser",
+                tint = Color.White,
+                modifier = Modifier
+                    .size(20.dp)
+                    .graphicsLayer { rotationZ = pullState.distanceFraction.coerceIn(0f, 1.5f) * 240f },
+            )
+        }
+    }
+}
+
 /** Floating header of the feed: segmented control (or active filter) and refresh. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedTopBar(vm: MainViewModel, pullState: PullToRefreshState, topInset: Dp, onRefresh: () -> Unit) {
-    val spin = rememberInfiniteTransition(label = "spin")
-    val angle by spin.animateFloat(0f, 360f, infiniteRepeatable(tween(850, easing = LinearEasing)), label = "angle")
-
     Column(
         Modifier.fillMaxWidth().padding(top = topInset + 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -155,17 +195,7 @@ fun FeedTopBar(vm: MainViewModel, pullState: PullToRefreshState, topInset: Dp, o
                     modifier = Modifier.align(Alignment.Center),
                 )
             }
-            GlassIconButton(
-                icon = Icons.Rounded.Refresh,
-                contentDescription = "Actualiser",
-                onClick = onRefresh,
-                size = 38.dp,
-                iconSize = 20.dp,
-                modifier = Modifier.align(Alignment.CenterEnd),
-                iconModifier = Modifier.graphicsLayer {
-                    rotationZ = if (vm.isRefreshing) angle else pullState.distanceFraction.coerceIn(0f, 1.5f) * 240f
-                },
-            )
+            RefreshButton(vm, pullState, onRefresh, Modifier.align(Alignment.CenterEnd))
         }
 
         AnimatedVisibility(

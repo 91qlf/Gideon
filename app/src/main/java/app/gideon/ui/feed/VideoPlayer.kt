@@ -31,6 +31,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -52,6 +54,8 @@ class VideoController {
     var isPlaying by mutableStateOf(false)
     var started by mutableStateOf(false)
     var failed by mutableStateOf(false)
+    var ended by mutableStateOf(false)
+    var userPaused by mutableStateOf(false)
     var position by mutableFloatStateOf(0f)
     var duration by mutableFloatStateOf(0f)
 
@@ -62,7 +66,25 @@ class VideoController {
     val progress: Float get() = if (duration > 0f) (position / duration).coerceIn(0f, 1f) else 0f
 
     fun toggle() {
-        if (isPlaying) onPause?.invoke() else onPlay?.invoke()
+        if (ended) {
+            replay()
+            return
+        }
+        if (isPlaying) {
+            userPaused = true
+            onPause?.invoke()
+        } else {
+            userPaused = false
+            onPlay?.invoke()
+        }
+    }
+
+    fun replay() {
+        ended = false
+        userPaused = false
+        position = 0f
+        onSeek?.invoke(0f)
+        onPlay?.invoke()
     }
 
     fun seekTo(fraction: Float) {
@@ -75,6 +97,8 @@ class VideoController {
     fun reset() {
         isPlaying = false
         started = false
+        ended = false
+        userPaused = false
         position = 0f
         duration = 0f
         onPlay = null
@@ -94,8 +118,11 @@ class PooledYouTube internal constructor(val view: YouTubePlayerView) {
     var player: YouTubePlayer? = null
         private set
     internal var videoId: String? = null
+    internal var loadedVideo: String? = null
     internal var sink: VideoController? = null
-    internal var preloading = false
+
+    /** Only the engine of the page on screen may play; any other one is held paused. */
+    internal var active = false
     private var pending: ((YouTubePlayer) -> Unit)? = null
 
     internal fun whenReady(block: (YouTubePlayer) -> Unit) {
@@ -105,7 +132,7 @@ class PooledYouTube internal constructor(val view: YouTubePlayerView) {
 
     internal fun clear() {
         sink = null
-        preloading = false
+        active = false
         pending = null
         player?.let {
             it.mute()
@@ -122,26 +149,24 @@ class PooledYouTube internal constructor(val view: YouTubePlayerView) {
 
         override fun onStateChange(youTubePlayer: YouTubePlayer, state: PlayerConstants.PlayerState) {
             val s = sink
-            if (s == null) {
+            if (s == null || !active) {
+                // Background engine (idle or buffering the next video): keep it silent and still.
                 if (state == PlayerConstants.PlayerState.PLAYING) youTubePlayer.pause()
                 return
             }
-            if (preloading && state == PlayerConstants.PlayerState.PLAYING) {
-                youTubePlayer.pause()
-                youTubePlayer.seekTo(0f)
-                preloading = false
-                return
-            }
             s.isPlaying = state == PlayerConstants.PlayerState.PLAYING
-            if (state == PlayerConstants.PlayerState.PLAYING) s.started = true
-            if (state == PlayerConstants.PlayerState.ENDED) {
-                youTubePlayer.seekTo(0f)
-                youTubePlayer.play()
+            when (state) {
+                PlayerConstants.PlayerState.PLAYING -> {
+                    s.started = true
+                    s.ended = false
+                }
+                PlayerConstants.PlayerState.ENDED -> s.ended = true
+                else -> Unit
             }
         }
 
         override fun onCurrentSecond(youTubePlayer: YouTubePlayer, second: Float) {
-            if (!preloading) sink?.position = second
+            if (active) sink?.position = second
         }
 
         override fun onVideoDuration(youTubePlayer: YouTubePlayer, duration: Float) {
@@ -254,6 +279,7 @@ fun YouTubeLayer(item: NewsItem, active: Boolean, preload: Boolean, controller: 
         if (!wanted) return@DisposableEffect onDispose { }
         val p = pool.acquire()
         p.sink = controller
+        p.active = active
         pooled = p
         controller.onPlay = { p.player?.play() }
         controller.onPause = { p.player?.pause() }
@@ -268,28 +294,20 @@ fun YouTubeLayer(item: NewsItem, active: Boolean, preload: Boolean, controller: 
     val p = pooled
     LaunchedEffect(p, active) {
         val engine = p ?: return@LaunchedEffect
-        if (engine.videoId != videoId) {
-            engine.videoId = videoId
-            engine.whenReady { yt ->
-                if (active) {
-                    engine.preloading = false
-                    if (sound) yt.unMute() else yt.mute()
-                    yt.loadVideo(videoId, 0f)
-                } else {
-                    yt.mute()
-                    engine.preloading = true
-                    yt.loadVideo(videoId, 0f)
-                }
-            }
-        } else {
-            engine.whenReady { yt ->
-                if (active) {
-                    engine.preloading = false
-                    if (sound) yt.unMute() else yt.mute()
-                    yt.play()
-                } else {
-                    yt.pause()
-                }
+        engine.active = active
+        engine.videoId = videoId
+        engine.whenReady { yt ->
+            if (engine.videoId != videoId) return@whenReady
+            if (engine.loadedVideo != videoId) {
+                engine.loadedVideo = videoId
+                if (active && sound) yt.unMute() else yt.mute()
+                // Active: plays at once. Next page: buffers silently and is held on its first frame.
+                yt.loadVideo(videoId, 0f)
+            } else if (active) {
+                if (sound) yt.unMute() else yt.mute()
+                if (!controller.userPaused && !controller.ended) yt.play()
+            } else {
+                yt.pause()
             }
         }
     }
@@ -312,7 +330,12 @@ fun YouTubeLayer(item: NewsItem, active: Boolean, preload: Boolean, controller: 
             )
         }
     }
-    Cover(item, item.defaultAspect(), visible = !(active && controller.started) || controller.failed)
+    // Our own cover hides YouTube's overlays whenever the video is not actually running.
+    Cover(
+        item,
+        item.defaultAspect(),
+        visible = !(active && controller.started) || controller.failed || controller.userPaused || controller.ended,
+    )
 }
 
 // ------------------------------------------------------------------ native layer (ExoPlayer)
@@ -372,7 +395,22 @@ fun NativeVideoLayer(item: NewsItem, active: Boolean, preload: Boolean, controll
     LaunchedEffect(player, active, soundOn) {
         val exo = player ?: return@LaunchedEffect
         exo.volume = if (active && soundOn) 1f else 0f
-        exo.playWhenReady = active
+        exo.playWhenReady = active && !controller.userPaused
+    }
+
+    // Pause in the background, resume when the app comes back.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(player, lifecycleOwner) {
+        val exo = player
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_STOP -> exo?.pause()
+                Lifecycle.Event.ON_START -> if (isActive && !controller.userPaused) exo?.play()
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     LaunchedEffect(player, active) {
