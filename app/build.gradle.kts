@@ -1,3 +1,4 @@
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -55,6 +56,10 @@ android {
         buildConfig = true
     }
 
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
+
     lint {
         abortOnError = false
         checkReleaseBuilds = false
@@ -62,6 +67,15 @@ android {
 
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
+    }
+}
+
+tasks.withType<Test>().configureEach {
+    environment("GIDEON_LIVE", System.getenv("GIDEON_LIVE") ?: "0")
+    testLogging {
+        showStandardStreams = true
+        events("passed", "skipped", "failed")
+        exceptionFormat = TestExceptionFormat.FULL
     }
 }
 
@@ -98,4 +112,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
 
     implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:13.0.0")
+    implementation("org.jsoup:jsoup:1.21.2")
+
+    testImplementation("junit:junit:4.13.2")
 }

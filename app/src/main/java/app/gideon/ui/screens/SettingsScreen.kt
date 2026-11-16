@@ -37,7 +37,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.gideon.BuildConfig
 import app.gideon.data.SourceKind
-import app.gideon.data.Sources
 import app.gideon.ui.AmbientBackground
 import app.gideon.ui.GideonLogo
 import app.gideon.ui.MainViewModel
@@ -125,26 +124,28 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun SourceGroup(vm: MainViewModel, kind: SourceKind) {
-    val groups = Sources.groups.filter { it.second == kind }
+private fun SourceGroup(vm: MainViewModel, kind: String) {
+    val groups = vm.catalog.publishersOf(kind)
     GlassGroup(Modifier.padding(horizontal = 16.dp)) {
-        groups.forEachIndexed { i, (publisher, k) ->
+        groups.forEachIndexed { i, pub ->
+            val publisher = pub.id
+            val k = kind
             if (i > 0) Divider()
-            val feeds = Sources.all.count { it.publisher == publisher && it.kind == k }
+            val feeds = vm.catalog.feeds.count { it.publisher == publisher && it.kind == k }
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 11.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(
-                    Modifier.size(34.dp).clip(RoundedRectangle(10.dp)).background(sourceColor(publisher)),
+                    Modifier.size(34.dp).clip(RoundedRectangle(10.dp)).background(sourceColor(pub.name)),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (kind == SourceKind.YOUTUBE) Icon(Icons.Rounded.Videocam, null, tint = Color.White, modifier = Modifier.size(19.dp))
-                    else Text(initials(publisher), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                    else Text(initials(pub.name), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Black)
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(publisher, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Text(pub.name, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                     Text(
                         if (kind == SourceKind.YOUTUBE) "Chaîne vidéo" else "$feeds rubrique${if (feeds > 1) "s" else ""}",
                         style = GType.Caption,

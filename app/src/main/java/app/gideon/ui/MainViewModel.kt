@@ -171,14 +171,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (on) DailyBriefWorker.schedule(gideon) else DailyBriefWorker.cancel(gideon)
     }
 
-    fun isGroupEnabled(publisher: String, kind: SourceKind) = "${kind.name}:$publisher" !in disabledGroups
+    val catalog get() = repo.catalog
 
-    fun setGroupEnabled(publisher: String, kind: SourceKind, enabled: Boolean) {
-        val key = "${kind.name}:$publisher"
+    fun isGroupEnabled(publisher: String, kind: String) = "$kind:$publisher" !in disabledGroups
+
+    fun setGroupEnabled(publisher: String, kind: String, enabled: Boolean) {
+        val key = "$kind:$publisher"
         disabledGroups = if (enabled) disabledGroups - key else disabledGroups + key
         store.disabledGroups = disabledGroups
         // hide content of disabled outlets immediately; a refresh brings new ones back
-        if (!enabled) setItems(allItems.filter { it.sourceKey != key }) else refresh(manual = false)
+        if (!enabled) setItems(allItems.filter { it.groupKey != key }) else refresh(manual = false)
     }
 
     var shouldAskNotifications: Boolean

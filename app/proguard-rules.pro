@@ -14,3 +14,8 @@
 -dontwarn org.conscrypt.**
 -dontwarn org.bouncycastle.**
 -dontwarn org.openjsse.**
+
+# jsoup optional dependencies
+-dontwarn com.google.re2j.**
+-dontwarn org.jspecify.**
+-dontwarn javax.annotation.**

@@ -18,13 +18,13 @@ class UserStore(context: Context) {
         set(v) = prefs.edit { putStringSet("liked", v) }
 
     var saved: List<NewsItem>
-        get() = runCatching { json.decodeFromString(savedSerializer, prefs.getString("saved", "[]")!!) }
+        get() = runCatching { json.decodeFromString(savedSerializer, prefs.getString("saved_v2", "[]")!!) }
             .getOrDefault(emptyList())
-        set(v) = prefs.edit { putString("saved", json.encodeToString(savedSerializer, v)) }
+        set(v) = prefs.edit { putString("saved_v2", json.encodeToString(savedSerializer, v)) }
 
     var disabledGroups: Set<String>
-        get() = prefs.getStringSet("disabled", emptySet())?.toSet() ?: emptySet()
-        set(v) = prefs.edit { putStringSet("disabled", v) }
+        get() = prefs.getStringSet("disabled_v2", emptySet())?.toSet() ?: emptySet()
+        set(v) = prefs.edit { putStringSet("disabled_v2", v) }
 
     var affinity: Map<String, Float>
         get() = runCatching { json.decodeFromString(affinitySerializer, prefs.getString("affinity", "{}")!!) }
@@ -38,6 +38,10 @@ class UserStore(context: Context) {
     var soundOn: Boolean
         get() = prefs.getBoolean("sound_on", true)
         set(v) = prefs.edit { putBoolean("sound_on", v) }
+
+    var textScale: Float
+        get() = prefs.getFloat("text_scale", 1f)
+        set(v) = prefs.edit { putFloat("text_scale", v) }
 
     var askedNotifications: Boolean
         get() = prefs.getBoolean("asked_notif", false)

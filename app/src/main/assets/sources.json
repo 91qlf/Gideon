@@ -1,0 +1,769 @@
+{
+ "publishers": [
+  {
+   "id": "lemonde",
+   "name": "Le Monde",
+   "domain": "lemonde.fr"
+  },
+  {
+   "id": "franceinfo",
+   "name": "franceinfo",
+   "domain": "francetvinfo.fr"
+  },
+  {
+   "id": "france24",
+   "name": "France 24",
+   "domain": "france24.com"
+  },
+  {
+   "id": "lefigaro",
+   "name": "Le Figaro",
+   "domain": "lefigaro.fr"
+  },
+  {
+   "id": "liberation",
+   "name": "Libération",
+   "domain": "liberation.fr"
+  },
+  {
+   "id": "leparisien",
+   "name": "Le Parisien",
+   "domain": "leparisien.fr"
+  },
+  {
+   "id": "lexpress",
+   "name": "L'Express",
+   "domain": "lexpress.fr"
+  },
+  {
+   "id": "lepoint",
+   "name": "Le Point",
+   "domain": "lepoint.fr"
+  },
+  {
+   "id": "lobs",
+   "name": "L'Obs",
+   "domain": "nouvelobs.com"
+  },
+  {
+   "id": "lesechos",
+   "name": "Les Echos",
+   "domain": "lesechos.fr"
+  },
+  {
+   "id": "challenges",
+   "name": "Challenges",
+   "domain": "challenges.fr"
+  },
+  {
+   "id": "bfmtv",
+   "name": "BFMTV",
+   "domain": "bfmtv.com"
+  },
+  {
+   "id": "rfi",
+   "name": "RFI",
+   "domain": "rfi.fr"
+  },
+  {
+   "id": "euronews",
+   "name": "Euronews",
+   "domain": "euronews.com"
+  },
+  {
+   "id": "courrier",
+   "name": "Courrier international",
+   "domain": "courrierinternational.com"
+  },
+  {
+   "id": "ouestfrance",
+   "name": "Ouest-France",
+   "domain": "ouest-france.fr"
+  },
+  {
+   "id": "20minutes",
+   "name": "20 Minutes",
+   "domain": "20minutes.fr"
+  },
+  {
+   "id": "huffpost",
+   "name": "HuffPost",
+   "domain": "huffingtonpost.fr"
+  },
+  {
+   "id": "numerama",
+   "name": "Numerama",
+   "domain": "numerama.com"
+  },
+  {
+   "id": "frandroid",
+   "name": "Frandroid",
+   "domain": "frandroid.com"
+  },
+  {
+   "id": "01net",
+   "name": "01net",
+   "domain": "01net.com"
+  },
+  {
+   "id": "lesnumeriques",
+   "name": "Les Numériques",
+   "domain": "lesnumeriques.com"
+  },
+  {
+   "id": "clubic",
+   "name": "Clubic",
+   "domain": "clubic.com"
+  },
+  {
+   "id": "pressecitron",
+   "name": "Presse-citron",
+   "domain": "presse-citron.net"
+  },
+  {
+   "id": "journaldugeek",
+   "name": "Journal du Geek",
+   "domain": "journaldugeek.com"
+  },
+  {
+   "id": "futura",
+   "name": "Futura",
+   "domain": "futura-sciences.com"
+  },
+  {
+   "id": "sciencesetavenir",
+   "name": "Sciences et Avenir",
+   "domain": "sciencesetavenir.fr"
+  },
+  {
+   "id": "lequipe",
+   "name": "L'Équipe",
+   "domain": "lequipe.fr"
+  },
+  {
+   "id": "eurosport",
+   "name": "Eurosport",
+   "domain": "eurosport.fr"
+  },
+  {
+   "id": "sofoot",
+   "name": "So Foot",
+   "domain": "sofoot.com"
+  },
+  {
+   "id": "rmcsport",
+   "name": "RMC Sport",
+   "domain": "rmcsport.bfmtv.com"
+  },
+  {
+   "id": "lesinrocks",
+   "name": "Les Inrocks",
+   "domain": "lesinrocks.com"
+  },
+  {
+   "id": "konbini",
+   "name": "Konbini",
+   "domain": "konbini.com"
+  },
+  {
+   "id": "telerama",
+   "name": "Télérama",
+   "domain": "telerama.fr"
+  },
+  {
+   "id": "allocine",
+   "name": "AlloCiné",
+   "domain": "allocine.fr"
+  },
+  {
+   "id": "radiocanada",
+   "name": "Radio-Canada",
+   "domain": "ici.radio-canada.ca"
+  },
+  {
+   "id": "letemps",
+   "name": "Le Temps",
+   "domain": "letemps.ch"
+  },
+  {
+   "id": "rtbf",
+   "name": "RTBF",
+   "domain": "rtbf.be"
+  },
+  {
+   "id": "hugodecrypte",
+   "name": "HugoDécrypte",
+   "domain": "hugodecrypte.com"
+  },
+  {
+   "id": "brut",
+   "name": "Brut",
+   "domain": "brut.media"
+  },
+  {
+   "id": "arte",
+   "name": "ARTE",
+   "domain": "arte.tv"
+  }
+ ],
+ "feeds": [
+  {
+   "publisher": "lemonde",
+   "kind": "rss",
+   "category": "UNE",
+   "url": "https://www.lemonde.fr/rss/une.xml"
+  },
+  {
+   "publisher": "lemonde",
+   "kind": "rss",
+   "category": "MONDE",
+   "url": "https://www.lemonde.fr/international/rss_full.xml"
+  },
+  {
+   "publisher": "lemonde",
+   "kind": "rss",
+   "category": "FRANCE",
+   "url": "https://www.lemonde.fr/politique/rss_full.xml"
+  },
+  {
+   "publisher": "lemonde",
+   "kind": "rss",
+   "category": "ECO",
+   "url": "https://www.lemonde.fr/economie/rss_full.xml"
+  },
+  {
+   "publisher": "lemonde",
+   "kind": "rss",
+   "category": "TECH",
+   "url": "https://www.lemonde.fr/pixels/rss_full.xml"
+  },
+  {
+   "publisher": "lemonde",
+   "kind": "rss",
+   "category": "SCIENCES",
+   "url": "https://www.lemonde.fr/sciences/rss_full.xml"
+  },
+  {
+   "publisher": "lemonde",
+   "kind": "rss",
+   "category": "SPORT",
+   "url": "https://www.lemonde.fr/sport/rss_full.xml"
+  },
+  {
+   "publisher": "lemonde",
+   "kind": "rss",
+   "category": "CULTURE",
+   "url": "https://www.lemonde.fr/culture/rss_full.xml"
+  },
+  {
+   "publisher": "franceinfo",
+   "kind": "rss",
+   "category": "UNE",
+   "url": "https://www.francetvinfo.fr/titres.rss"
+  },
+  {
+   "publisher": "franceinfo",
+   "kind": "rss",
+   "category": "MONDE",
+   "url": "https://www.francetvinfo.fr/monde.rss"
+  },
+  {
+   "publisher": "franceinfo",
+   "kind": "rss",
+   "category": "FRANCE",
+   "url": "https://www.francetvinfo.fr/france.rss"
+  },
+  {
+   "publisher": "franceinfo",
+   "kind": "rss",
+   "category": "FRANCE",
+   "url": "https://www.francetvinfo.fr/politique.rss"
+  },
+  {
+   "publisher": "franceinfo",
+   "kind": "rss",
+   "category": "ECO",
+   "url": "https://www.francetvinfo.fr/economie.rss"
+  },
+  {
+   "publisher": "franceinfo",
+   "kind": "rss",
+   "category": "TECH",
+   "url": "https://www.francetvinfo.fr/internet.rss"
+  },
+  {
+   "publisher": "franceinfo",
+   "kind": "rss",
+   "category": "SCIENCES",
+   "url": "https://www.francetvinfo.fr/sciences.rss"
+  },
+  {
+   "publisher": "franceinfo",
+   "kind": "rss",
+   "category": "SCIENCES",
+   "url": "https://www.francetvinfo.fr/sante.rss"
+  },
+  {
+   "publisher": "franceinfo",
+   "kind": "rss",
+   "category": "SPORT",
+   "url": "https://www.francetvinfo.fr/sports.rss"
+  },
+  {
+   "publisher": "franceinfo",
+   "kind": "rss",
+   "category": "CULTURE",
+   "url": "https://www.francetvinfo.fr/culture.rss"
+  },
+  {
+   "publisher": "france24",
+   "kind": "rss",
+   "category": "UNE",
+   "url": "https://www.france24.com/fr/rss"
+  },
+  {
+   "publisher": "france24",
+   "kind": "rss",
+   "category": "MONDE",
+   "url": "https://www.france24.com/fr/europe/rss"
+  },
+  {
+   "publisher": "france24",
+   "kind": "rss",
+   "category": "MONDE",
+   "url": "https://www.france24.com/fr/afrique/rss"
+  },
+  {
+   "publisher": "france24",
+   "kind": "rss",
+   "category": "FRANCE",
+   "url": "https://www.france24.com/fr/france/rss"
+  },
+  {
+   "publisher": "france24",
+   "kind": "rss",
+   "category": "ECO",
+   "url": "https://www.france24.com/fr/%C3%A9co-tech/rss"
+  },
+  {
+   "publisher": "france24",
+   "kind": "rss",
+   "category": "SPORT",
+   "url": "https://www.france24.com/fr/sports/rss"
+  },
+  {
+   "publisher": "france24",
+   "kind": "rss",
+   "category": "CULTURE",
+   "url": "https://www.france24.com/fr/culture/rss"
+  },
+  {
+   "publisher": "lefigaro",
+   "kind": "rss",
+   "category": "UNE",
+   "url": "https://www.lefigaro.fr/rss/figaro_actualites.xml"
+  },
+  {
+   "publisher": "lefigaro",
+   "kind": "rss",
+   "category": "MONDE",
+   "url": "https://www.lefigaro.fr/rss/figaro_international.xml"
+  },
+  {
+   "publisher": "lefigaro",
+   "kind": "rss",
+   "category": "FRANCE",
+   "url": "https://www.lefigaro.fr/rss/figaro_politique.xml"
+  },
+  {
+   "publisher": "lefigaro",
+   "kind": "rss",
+   "category": "ECO",
+   "url": "https://www.lefigaro.fr/rss/figaro_economie.xml"
+  },
+  {
+   "publisher": "lefigaro",
+   "kind": "rss",
+   "category": "TECH",
+   "url": "https://www.lefigaro.fr/rss/figaro_secteur_high-tech.xml"
+  },
+  {
+   "publisher": "lefigaro",
+   "kind": "rss",
+   "category": "SCIENCES",
+   "url": "https://www.lefigaro.fr/rss/figaro_sciences.xml"
+  },
+  {
+   "publisher": "lefigaro",
+   "kind": "rss",
+   "category": "SPORT",
+   "url": "https://www.lefigaro.fr/rss/figaro_sport.xml"
+  },
+  {
+   "publisher": "lefigaro",
+   "kind": "rss",
+   "category": "CULTURE",
+   "url": "https://www.lefigaro.fr/rss/figaro_culture.xml"
+  },
+  {
+   "publisher": "liberation",
+   "kind": "rss",
+   "category": "UNE",
+   "url": "https://www.liberation.fr/arc/outboundfeeds/rss-all/collection/accueil-une/?outputType=xml"
+  },
+  {
+   "publisher": "liberation",
+   "kind": "rss",
+   "category": "MONDE",
+   "url": "https://www.liberation.fr/arc/outboundfeeds/rss-all/category/international/?outputType=xml"
+  },
+  {
+   "publisher": "liberation",
+   "kind": "rss",
+   "category": "FRANCE",
+   "url": "https://www.liberation.fr/arc/outboundfeeds/rss-all/category/politique/?outputType=xml"
+  },
+  {
+   "publisher": "liberation",
+   "kind": "rss",
+   "category": "ECO",
+   "url": "https://www.liberation.fr/arc/outboundfeeds/rss-all/category/economie/?outputType=xml"
+  },
+  {
+   "publisher": "liberation",
+   "kind": "rss",
+   "category": "CULTURE",
+   "url": "https://www.liberation.fr/arc/outboundfeeds/rss-all/category/culture/?outputType=xml"
+  },
+  {
+   "publisher": "leparisien",
+   "kind": "rss",
+   "category": "UNE",
+   "url": "https://feeds.leparisien.fr/leparisien/rss"
+  },
+  {
+   "publisher": "leparisien",
+   "kind": "rss",
+   "category": "UNE",
+   "url": "https://www.leparisien.fr/arc/outboundfeeds/rss/une.xml"
+  },
+  {
+   "publisher": "lexpress",
+   "kind": "rss",
+   "category": "UNE",
+   "url": "https://www.lexpress.fr/arc/outboundfeeds/rss/alaune.xml"
+  },
+  {
+   "publisher": "lepoint",
+   "kind": "rss",
+   "category": "UNE",
+   "url": "https://www.lepoint.fr/24h-infos/rss.xml"
+  },
+  {
+   "publisher": "lepoint",
+   "kind": "rss",
+   "category": "UNE",
+   "url": "https://www.lepoint.fr/rss.xml"
+  },
+  {
+   "publisher": "lobs",
+   "kind": "rss",
+   "category": "UNE",
+   "url": "https://www.nouvelobs.com/a-la-une/rss.xml"
+  },
+  {
+   "publisher": "lesechos",
+   "kind": "rss",
+   "category": "ECO",
+   "url": "https://syndication.lesechos.fr/rss/rss_une.xml"
+  },
+  {
+   "publisher": "lesechos",
+   "kind": "rss",
+   "category": "TECH",
+   "url": "https://syndication.lesechos.fr/rss/rss_tech_medias.xml"
+  },
+  {
+   "publisher": "challenges",
+   "kind": "rss",
+   "category": "ECO",
+   "url": "https://www.challenges.fr/rss.xml"
+  },
+  {
+   "publisher": "bfmtv",
+   "kind": "rss",
+   "category": "UNE",
+   "url": "https://www.bfmtv.com/rss/news-24-7/"
+  },
+  {
+   "publisher": "bfmtv",
+   "kind": "rss",
+   "category": "UNE",
+   "url": "https://www.bfmtv.com/rss/info/flux-rss/flux-toutes-les-actualites/"
+  },
+  {
+   "publisher": "bfmtv",
+   "kind": "rss",
+   "category": "MONDE",
+   "url": "https://www.bfmtv.com/rss/international/"
+  },
+  {
+   "publisher": "bfmtv",
+   "kind": "rss",
+   "category": "FRANCE",
+   "url": "https://www.bfmtv.com/rss/politique/"
+  },
+  {
+   "publisher": "bfmtv",
+   "kind": "rss",
+   "category": "ECO",
+   "url": "https://www.bfmtv.com/rss/economie/"
+  },
+  {
+   "publisher": "bfmtv",
+   "kind": "rss",
+   "category": "TECH",
+   "url": "https://www.bfmtv.com/rss/tech/"
+  },
+  {
+   "publisher": "rfi",
+   "kind": "rss",
+   "category": "MONDE",
+   "url": "https://www.rfi.fr/fr/rss"
+  },
+  {
+   "publisher": "rfi",
+   "kind": "rss",
+   "category": "MONDE",
+   "url": "https://www.rfi.fr/fr/afrique/rss"
+  },
+  {
+   "publisher": "euronews",
+   "kind": "rss",
+   "category": "MONDE",
+   "url": "https://fr.euronews.com/rss"
+  },
+  {
+   "publisher": "courrier",
+   "kind": "rss",
+   "category": "MONDE",
+   "url": "https://www.courrierinternational.com/feed/all/rss.xml"
+  },
+  {
+   "publisher": "ouestfrance",
+   "kind": "rss",
+   "category": "FRANCE",
+   "url": "https://www.ouest-france.fr/rss/une"
+  },
+  {
+   "publisher": "ouestfrance",
+   "kind": "rss",
+   "category": "FRANCE",
+   "url": "https://www.ouest-france.fr/rss-en-continu.xml"
+  },
+  {
+   "publisher": "20minutes",
+   "kind": "rss",
+   "category": "UNE",
+   "url": "https://www.20minutes.fr/feeds/rss-une.xml"
+  },
+  {
+   "publisher": "20minutes",
+   "kind": "rss",
+   "category": "MONDE",
+   "url": "https://www.20minutes.fr/feeds/rss-monde.xml"
+  },
+  {
+   "publisher": "20minutes",
+   "kind": "rss",
+   "category": "TECH",
+   "url": "https://www.20minutes.fr/feeds/rss-high-tech.xml"
+  },
+  {
+   "publisher": "20minutes",
+   "kind": "rss",
+   "category": "SPORT",
+   "url": "https://www.20minutes.fr/feeds/rss-sport.xml"
+  },
+  {
+   "publisher": "huffpost",
+   "kind": "rss",
+   "category": "UNE",
+   "url": "https://www.huffingtonpost.fr/rss/all_headline.xml"
+  },
+  {
+   "publisher": "numerama",
+   "kind": "rss",
+   "category": "TECH",
+   "url": "https://www.numerama.com/feed/"
+  },
+  {
+   "publisher": "numerama",
+   "kind": "rss",
+   "category": "SCIENCES",
+   "url": "https://www.numerama.com/sciences/feed/"
+  },
+  {
+   "publisher": "frandroid",
+   "kind": "rss",
+   "category": "TECH",
+   "url": "https://www.frandroid.com/feed"
+  },
+  {
+   "publisher": "01net",
+   "kind": "rss",
+   "category": "TECH",
+   "url": "https://www.01net.com/feed/"
+  },
+  {
+   "publisher": "lesnumeriques",
+   "kind": "rss",
+   "category": "TECH",
+   "url": "https://www.lesnumeriques.com/rss.xml"
+  },
+  {
+   "publisher": "clubic",
+   "kind": "rss",
+   "category": "TECH",
+   "url": "https://www.clubic.com/feed/news.rss"
+  },
+  {
+   "publisher": "pressecitron",
+   "kind": "rss",
+   "category": "TECH",
+   "url": "https://www.presse-citron.net/feed/"
+  },
+  {
+   "publisher": "journaldugeek",
+   "kind": "rss",
+   "category": "TECH",
+   "url": "https://www.journaldugeek.com/feed/"
+  },
+  {
+   "publisher": "futura",
+   "kind": "rss",
+   "category": "SCIENCES",
+   "url": "https://www.futura-sciences.com/rss/actualites.xml"
+  },
+  {
+   "publisher": "sciencesetavenir",
+   "kind": "rss",
+   "category": "SCIENCES",
+   "url": "https://www.sciencesetavenir.fr/rss.xml"
+  },
+  {
+   "publisher": "lequipe",
+   "kind": "rss",
+   "category": "SPORT",
+   "url": "https://dwh.lequipe.fr/api/edito/rss?path=/"
+  },
+  {
+   "publisher": "eurosport",
+   "kind": "rss",
+   "category": "SPORT",
+   "url": "https://www.eurosport.fr/rss.xml"
+  },
+  {
+   "publisher": "sofoot",
+   "kind": "rss",
+   "category": "SPORT",
+   "url": "https://www.sofoot.com/rss.xml"
+  },
+  {
+   "publisher": "rmcsport",
+   "kind": "rss",
+   "category": "SPORT",
+   "url": "https://rmcsport.bfmtv.com/rss/info/flux-rss/flux-toutes-les-actualites/"
+  },
+  {
+   "publisher": "lesinrocks",
+   "kind": "rss",
+   "category": "CULTURE",
+   "url": "https://www.lesinrocks.com/feed/"
+  },
+  {
+   "publisher": "konbini",
+   "kind": "rss",
+   "category": "CULTURE",
+   "url": "https://www.konbini.com/fr/feed/"
+  },
+  {
+   "publisher": "telerama",
+   "kind": "rss",
+   "category": "CULTURE",
+   "url": "https://www.telerama.fr/rss/une.xml"
+  },
+  {
+   "publisher": "allocine",
+   "kind": "rss",
+   "category": "CULTURE",
+   "url": "https://www.allocine.fr/rss/news.xml"
+  },
+  {
+   "publisher": "radiocanada",
+   "kind": "rss",
+   "category": "MONDE",
+   "url": "https://ici.radio-canada.ca/rss/4159"
+  },
+  {
+   "publisher": "letemps",
+   "kind": "rss",
+   "category": "MONDE",
+   "url": "https://www.letemps.ch/articles.rss"
+  },
+  {
+   "publisher": "rtbf",
+   "kind": "rss",
+   "category": "MONDE",
+   "url": "https://rss.rtbf.be/article/rss/highlight_rtbf_info.xml"
+  },
+  {
+   "publisher": "franceinfo",
+   "kind": "youtube",
+   "category": "UNE",
+   "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCO6K_kkdP-lnSCiO3tPx7WA"
+  },
+  {
+   "publisher": "france24",
+   "kind": "youtube",
+   "category": "MONDE",
+   "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCCCPCZNChQdGa9EkATeye4g"
+  },
+  {
+   "publisher": "hugodecrypte",
+   "kind": "youtube",
+   "category": "UNE",
+   "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCAcAnMF0OrCtUep3Y4M-ZPw"
+  },
+  {
+   "publisher": "brut",
+   "kind": "youtube",
+   "category": "UNE",
+   "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCSKdvgqdnj72_SLggp7BDTg"
+  },
+  {
+   "publisher": "lemonde",
+   "kind": "youtube",
+   "category": "UNE",
+   "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCYpRDnhk5H8h16jpS84uqsA"
+  },
+  {
+   "publisher": "bfmtv",
+   "kind": "youtube",
+   "category": "FRANCE",
+   "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCXwDLMDV86ldKoFVc_g8P0g"
+  },
+  {
+   "publisher": "arte",
+   "kind": "youtube",
+   "category": "CULTURE",
+   "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCwI-JbGNsojunnHbFAc0M4Q"
+  },
+  {
+   "publisher": "euronews",
+   "kind": "youtube",
+   "category": "MONDE",
+   "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCW2QcKZiU8aUGg4yxCIditg"
+  }
+ ]
+}

@@ -1,8 +1,8 @@
 package app.gideon.data
 
-import android.util.Xml
-import androidx.core.text.HtmlCompat
-import org.xmlpull.v1.XmlPullParser
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Element
+import org.jsoup.parser.Parser
 import java.io.InputStream
 import java.security.MessageDigest
 import java.text.SimpleDateFormat
@@ -12,141 +12,125 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+/** RSS 2.0 / Atom (incl. YouTube) parser. Pure JVM so it can be tested against live feeds in CI. */
 object FeedParser {
 
-    fun parse(input: InputStream, source: FeedSource, limit: Int = 30): List<NewsItem> {
-        val p = Xml.newPullParser()
-        runCatching { p.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false) }
-        runCatching { p.setFeature("http://xmlpull.org/v1/doc/features.html#relaxed", true) }
-        p.setInput(input, null)
+    data class Result(val channelTitle: String?, val items: List<NewsItem>)
 
+    fun parse(
+        input: InputStream,
+        baseUrl: String,
+        feed: FeedDef,
+        publisher: Publisher,
+        limit: Int = 30,
+        now: Long = System.currentTimeMillis(),
+    ): Result {
+        val doc = Jsoup.parse(input, null, baseUrl, Parser.xmlParser())
+        val channelTitle = (doc.selectFirst("channel > title") ?: doc.selectFirst("feed > title"))?.text()?.trim()
+        var entries: List<Element> = doc.getElementsByTag("item")
+        if (entries.isEmpty()) entries = doc.getElementsByTag("entry")
         val out = ArrayList<NewsItem>()
-        var cur: HashMap<String, String>? = null
-        var bestImageWidth = -1
-        var event = p.eventType
-        while (event != XmlPullParser.END_DOCUMENT && out.size < limit) {
-            if (event == XmlPullParser.START_TAG) {
-                val name = p.name.lowercase(Locale.ROOT)
-                if (name == "item" || name == "entry") {
-                    cur = HashMap()
-                    bestImageWidth = -1
-                } else if (cur != null) {
-                    when (name) {
-                        "title" -> cur.putIfAbsent("title", p.readAllText())
-                        "link" -> {
-                            val href = p.getAttributeValue(null, "href")
-                            if (href != null) {
-                                val rel = p.getAttributeValue(null, "rel")
-                                if (rel == null || rel == "alternate") cur.putIfAbsent("link", href)
-                            } else {
-                                val t = p.readAllText()
-                                if (t.startsWith("http")) cur.putIfAbsent("link", t)
-                            }
-                        }
-                        "description", "summary", "media:description" ->
-                            cur.putIfAbsent("desc", p.readAllText())
-                        "content:encoded", "content" -> cur.putIfAbsent("content", p.readAllText())
-                        "pubdate", "published", "dc:date", "updated" ->
-                            cur.putIfAbsent("date", p.readAllText())
-                        "guid", "id" -> cur.putIfAbsent("guid", p.readAllText())
-                        "yt:videoid" -> cur["videoId"] = p.readAllText()
-                        "enclosure" -> {
-                            val url = p.getAttributeValue(null, "url")
-                            val type = p.getAttributeValue(null, "type").orEmpty()
-                            if (url != null && (type.startsWith("image") || (type.isEmpty() && url.looksLikeImage()))) {
-                                cur.putIfAbsent("image", url)
-                            }
-                        }
-                        "media:content", "media:thumbnail" -> {
-                            val url = p.getAttributeValue(null, "url")
-                            val type = p.getAttributeValue(null, "type")
-                            val medium = p.getAttributeValue(null, "medium")
-                            val isImage = (medium == null || medium == "image") &&
-                                (type == null || type.startsWith("image"))
-                            if (url != null && isImage) {
-                                val w = p.getAttributeValue(null, "width")?.toIntOrNull() ?: 0
-                                if (w > bestImageWidth || !cur.containsKey("image")) {
-                                    cur["image"] = url
-                                    bestImageWidth = w
-                                }
-                            }
-                        }
-                    }
-                }
-            } else if (event == XmlPullParser.END_TAG) {
-                val name = p.name.lowercase(Locale.ROOT)
-                if ((name == "item" || name == "entry") && cur != null) {
-                    build(cur, source)?.let(out::add)
-                    cur = null
-                }
-            }
-            event = p.next()
+        for (e in entries) {
+            if (out.size >= limit) break
+            runCatching { build(e, feed, publisher, now) }.getOrNull()?.let(out::add)
         }
-        return out
+        return Result(channelTitle, out)
     }
 
-    private fun build(m: Map<String, String>, source: FeedSource): NewsItem? {
-        val title = clean(m["title"]).takeIf { it.isNotBlank() } ?: return null
-        val link = m["link"] ?: m["guid"]?.takeIf { it.startsWith("http") } ?: return null
-        val rawDesc = m["desc"] ?: m["content"] ?: ""
-        val videoId = m["videoId"]?.takeIf { it.isNotBlank() }
-        val image = when {
-            videoId != null -> "https://i.ytimg.com/vi/$videoId/hqdefault.jpg"
-            else -> m["image"] ?: firstImg(m["content"]) ?: firstImg(m["desc"])
-        }
-        var summary = clean(rawDesc)
-        if (videoId != null) summary = summary.lineSequence().firstOrNull { it.isNotBlank() }.orEmpty()
-        if (summary.length > 320) summary = summary.take(317).trimEnd() + "…"
-        if (summary.equals(title, ignoreCase = true)) summary = ""
+    private fun Element.child(vararg names: String): Element? =
+        children().firstOrNull { it.normalName() in names }
+
+    private fun build(e: Element, feed: FeedDef, pub: Publisher, now: Long): NewsItem? {
+        val title = clean(e.child("title")?.text()).takeIf { it.isNotBlank() } ?: return null
+        val link = linkOf(e) ?: return null
+        val videoId = e.child("yt:videoid")?.text()?.trim()?.takeIf { it.isNotEmpty() }
+
+        val content = e.child("content:encoded", "content")?.text().orEmpty()
+        val summary: String = if (videoId != null) {
+            e.getElementsByTag("media:description").firstOrNull()?.wholeText()
+                ?.lineSequence()?.map { it.trim() }?.firstOrNull { it.isNotEmpty() }.orEmpty()
+        } else {
+            val raw = (e.child("description", "summary")?.text()).orEmpty().ifBlank { content }
+            clean(raw)
+        }.let { if (it.length > 320) it.take(317).trimEnd() + "…" else it }
+            .let { if (it.equals(title, ignoreCase = true)) "" else it }
+
+        val image = if (videoId != null) "https://i.ytimg.com/vi/$videoId/hqdefault.jpg" else imageOf(e, content)
 
         return NewsItem(
-            id = if (videoId != null) "yt:$videoId" else "a:" + md5(link),
+            id = if (videoId != null) "yt:$videoId" else "a:" + md5(link.substringBefore('#')),
             title = title,
             summary = summary,
             link = link,
             imageUrl = image?.replace("&amp;", "&")?.let { if (it.startsWith("//")) "https:$it" else it },
-            sourceKey = source.groupKey,
-            sourceName = source.publisher,
-            category = source.category.name,
-            publishedAt = parseDate(m["date"]) ?: System.currentTimeMillis(),
+            publisherId = pub.id,
+            sourceName = pub.name,
+            domain = pub.domain,
+            kind = feed.kind,
+            category = Category.fromId(feed.category).name,
+            publishedAt = parseDate(e.child("pubdate", "published", "dc:date", "updated")?.text()) ?: now,
             videoId = videoId,
             isShort = videoId != null && link.contains("/shorts/"),
         )
     }
 
-    /** Reads every text node until the matching end tag (tolerates nested markup). */
-    private fun XmlPullParser.readAllText(): String {
-        val startDepth = depth
-        val sb = StringBuilder()
-        var e = next()
-        while (e != XmlPullParser.END_DOCUMENT && !(e == XmlPullParser.END_TAG && depth == startDepth)) {
-            if (e == XmlPullParser.TEXT) sb.append(text)
-            e = next()
+    private fun linkOf(e: Element): String? {
+        for (l in e.children()) {
+            if (l.normalName() != "link") continue
+            val href = l.attr("href")
+            if (href.isNotBlank()) {
+                val rel = l.attr("rel")
+                if (rel.isEmpty() || rel == "alternate") return href.trim()
+            } else {
+                val t = l.text().trim()
+                if (t.startsWith("http")) return t
+            }
         }
-        return sb.toString().trim()
+        e.child("feedburner:origlink")?.text()?.trim()?.takeIf { it.startsWith("http") }?.let { return it }
+        return e.child("guid", "id")?.text()?.trim()?.takeIf { it.startsWith("http") }
     }
 
-    private val imgRegex = Regex("""<img[^>]+src\s*=\s*["']([^"']+)["']""", RegexOption.IGNORE_CASE)
+    private fun imageOf(e: Element, content: String): String? {
+        var best: String? = null
+        var bestWidth = -1
+        val media = e.getElementsByTag("media:content") + e.getElementsByTag("media:thumbnail")
+        for (m in media) {
+            val url = m.attr("url").takeIf { it.isNotBlank() } ?: continue
+            val type = m.attr("type")
+            val medium = m.attr("medium")
+            if (medium.isNotEmpty() && medium != "image") continue
+            if (type.isNotEmpty() && !type.startsWith("image")) continue
+            val w = m.attr("width").toIntOrNull() ?: 0
+            if (best == null || w > bestWidth) {
+                best = url
+                bestWidth = w
+            }
+        }
+        if (best != null) return best
+        for (enc in e.getElementsByTag("enclosure")) {
+            val url = enc.attr("url").takeIf { it.isNotBlank() } ?: continue
+            val type = enc.attr("type")
+            if (type.startsWith("image") || (type.isEmpty() && url.looksLikeImage())) return url
+        }
+        e.child("itunes:image")?.attr("href")?.takeIf { it.isNotBlank() }?.let { return it }
+        return firstImg(content) ?: firstImg(e.child("description", "summary")?.text())
+    }
 
-    private fun firstImg(html: String?): String? =
-        html?.let { imgRegex.find(it)?.groupValues?.get(1) }
+    private fun firstImg(html: String?): String? {
+        if (html.isNullOrBlank() || !html.contains("<img", ignoreCase = true)) return null
+        return Jsoup.parse(html).selectFirst("img[src]")?.attr("src")?.takeIf { it.startsWith("http") || it.startsWith("//") }
+    }
 
     private fun String.looksLikeImage(): Boolean {
         val l = lowercase(Locale.ROOT)
         return l.contains(".jpg") || l.contains(".jpeg") || l.contains(".png") || l.contains(".webp")
     }
 
+    /** Turns an HTML fragment into plain text. */
     fun clean(html: String?): String {
         if (html.isNullOrBlank()) return ""
-        val noImg = html
-            .replace(Regex("(?is)<(script|style)[^>]*>.*?</\\1>"), " ")
-            .replace(Regex("(?i)<img[^>]*>"), " ")
-        return HtmlCompat.fromHtml(noImg, HtmlCompat.FROM_HTML_MODE_LEGACY)
-            .toString()
-            .replace('￼', ' ')
-            .replace(Regex("[ \\t\\u00A0]+"), " ")
-            .replace(Regex("\\n{3,}"), "\n\n")
-            .trim()
+        val text = if (html.contains('<') || html.contains('&')) Jsoup.parse(html).text() else html
+        return text.replace(' ', ' ').replace(Regex("\\s+"), " ").trim()
     }
 
     fun parseDate(s: String?): Long? {
@@ -154,15 +138,16 @@ object FeedParser {
         runCatching { return ZonedDateTime.parse(t, DateTimeFormatter.RFC_1123_DATE_TIME).toInstant().toEpochMilli() }
         runCatching { return OffsetDateTime.parse(t).toInstant().toEpochMilli() }
         runCatching { return Instant.parse(t).toEpochMilli() }
-        for (pattern in listOf("EEE, dd MMM yyyy HH:mm:ss zzz", "EEE, dd MMM yyyy HH:mm:ss Z", "EEE, dd MMM yyyy HH:mm zzz")) {
-            runCatching {
-                SimpleDateFormat(pattern, Locale.US).parse(t)?.let { return it.time }
-            }
+        runCatching { return ZonedDateTime.parse(t).toInstant().toEpochMilli() }
+        for (pattern in listOf(
+            "EEE, dd MMM yyyy HH:mm:ss zzz", "EEE, dd MMM yyyy HH:mm:ss Z", "EEE, dd MMM yyyy HH:mm zzz",
+            "dd MMM yyyy HH:mm:ss Z", "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd'T'HH:mm:ssZ",
+        )) {
+            runCatching { SimpleDateFormat(pattern, Locale.US).parse(t)?.let { return it.time } }
         }
         return null
     }
 
     fun md5(s: String): String =
-        MessageDigest.getInstance("MD5").digest(s.toByteArray())
-            .joinToString("") { "%02x".format(it) }
+        MessageDigest.getInstance("MD5").digest(s.toByteArray()).joinToString("") { "%02x".format(it) }
 }
