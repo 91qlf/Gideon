@@ -193,7 +193,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun ensureImage(item: NewsItem) {
         if (item.imageUrl != null || item.isVideo || !imageAttempts.add(item.id)) return
         viewModelScope.launch {
-            repo.fetchOgImage(item.link)?.let { imageOverrides[item.id] = it }
+            repo.article(item.link)?.heroImage?.let { imageOverrides[item.id] = it }
         }
     }
 }
