@@ -5,6 +5,8 @@ import Observation
 @Observable
 final class NewsStore {
     static let base = URL(string: "https://91qlf.github.io/Gideon/")!
+    /// Same data attached to a GitHub release, used when the Pages site is unavailable.
+    static let mirror = URL(string: "https://github.com/91qlf/Gideon/releases/download/feed-data/")!
 
     private(set) var data: FeedData?
     private(set) var all: [Story] = []
@@ -24,6 +26,8 @@ final class NewsStore {
     private(set) var soundOn = true
     private(set) var textScale: Double = 1
     private var affinity: [String: Double] = [:]
+    @ObservationIgnored private var articleBundle: [String: Article]?
+    @ObservationIgnored private var bundleStamp: Double = -1
 
     func setFeedTab(_ tab: FeedTab) {
         guard tab != feedTab || filter != nil else { return }
@@ -91,8 +95,13 @@ final class NewsStore {
         do {
             var url = Self.base.appending(path: "data/feed.json")
             url.append(queryItems: [URLQueryItem(name: "t", value: String(Int(Date().timeIntervalSince1970)))])
-            let (bytes, _) = try await URLSession.shared.data(from: url)
-            let feed = try JSONDecoder().decode(FeedData.self, from: bytes)
+            var payload = try? await Self.fetch(url, fresh: true)
+            if payload == nil {
+                payload = try await Self.fetch(Self.mirror.appending(path: "feed.json"), fresh: true)
+            }
+            guard let bytes = payload, let feed = await Self.decode(FeedData.self, bytes) else {
+                throw URLError(.cannotParseResponse)
+            }
             let before = Set(data?.items.map(\.id) ?? [])
             try? bytes.write(to: cacheFile)
             apply(feed)
@@ -156,10 +165,33 @@ final class NewsStore {
 
     func article(for story: Story) async -> Article? {
         guard story.hasArticle else { return nil }
-        let url = Self.base.appending(path: "data/a/\(story.id.replacingOccurrences(of: ":", with: "_")).json")
-        guard let (bytes, response) = try? await URLSession.shared.data(from: url),
-              (response as? HTTPURLResponse)?.statusCode == 200 else { return nil }
-        return try? JSONDecoder().decode(Article.self, from: bytes)
+        let key = story.id.replacingOccurrences(of: ":", with: "_")
+        if let bytes = try? await Self.fetch(Self.base.appending(path: "data/a/\(key).json"), fresh: false),
+           let article = await Self.decode(Article.self, bytes) {
+            return article
+        }
+        let stamp = data?.updatedAt ?? 0
+        if articleBundle?[key] == nil && bundleStamp != stamp,
+           let bytes = try? await Self.fetch(Self.mirror.appending(path: "articles.json"), fresh: true),
+           let bundle = await Self.decode([String: Article].self, bytes) {
+            articleBundle = bundle
+            bundleStamp = stamp
+        }
+        return articleBundle?[key]
+    }
+
+    private nonisolated static func fetch(_ url: URL, fresh: Bool) async throws -> Data {
+        let request = URLRequest(url: url,
+                                 cachePolicy: fresh ? .reloadIgnoringLocalCacheData : .useProtocolCachePolicy,
+                                 timeoutInterval: 20)
+        let (bytes, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }
+        return bytes
+    }
+
+    /// Decodes off the main thread so big payloads never stutter the feed.
+    private nonisolated static func decode<T: Decodable>(_ type: T.Type, _ bytes: Data) async -> T? {
+        try? JSONDecoder().decode(type, from: bytes)
     }
 
     // MARK: - User actions
