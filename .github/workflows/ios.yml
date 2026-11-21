@@ -7,6 +7,10 @@ on:
       - "ios/**"
       - ".github/workflows/ios.yml"
   workflow_dispatch:
+    inputs:
+      runner:
+        description: "macOS runner image (the newest Xcode on it is used)"
+        default: "macos-26"
 
 permissions:
   contents: write
@@ -17,7 +21,7 @@ concurrency:
 
 jobs:
   ipa:
-    runs-on: macos-26
+    runs-on: ${{ inputs.runner || 'macos-26' }}
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -30,7 +34,8 @@ jobs:
           sudo xcode-select -s "$XC/Contents/Developer"
           xcodebuild -version
           xcodebuild -showsdks | grep -i iphoneos || true
-          xcodebuild -showsdks | grep -q "iphoneos27" || { echo "::error::No iOS 27 SDK on this runner"; exit 1; }
+          echo "IOS_SDK=$(xcrun --sdk iphoneos --show-sdk-version)" >> "$GITHUB_ENV"
+          echo "XCODE_VERSION=$(xcodebuild -version | head -1)" >> "$GITHUB_ENV"
 
       - name: Generate the Xcode project
         working-directory: ios
@@ -78,12 +83,12 @@ jobs:
           make_latest: false
           files: ios/Gideon-iOS-1.0.${{ github.run_number }}.ipa
           body: |
-            Application iPhone native (SwiftUI, Liquid Glass), compilée avec le SDK iOS 27, non signée.
+            Application iPhone native (SwiftUI, Liquid Glass), compilée avec ${{ env.XCODE_VERSION }} (SDK iOS ${{ env.IOS_SDK }}), non signée.
             À installer avec AltStore, SideStore, Sideloadly ou un autre outil de sideload : il la signe avec ton identifiant Apple.
-            iOS 18 minimum.
+            Fonctionne sur iOS 18 et toutes les versions plus récentes (iOS 26, iOS 27…).
 
   simulator:
-    runs-on: macos-26
+    runs-on: ${{ inputs.runner || 'macos-26' }}
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4

@@ -42,9 +42,6 @@ def runtime_version(key):
 devices = json.loads(sh("xcrun", "simctl", "list", "devices", "available", "-j").stdout)["devices"]
 pick = None
 for runtime in sorted((k for k in devices if "iOS" in k), key=runtime_version, reverse=True):
-    if runtime_version(runtime)[0] < 27:
-        print("skipping older runtime", runtime, flush=True)
-        continue
     phones = [d for d in devices[runtime] if d["name"].startswith("iPhone")]
     pros = [d for d in phones if d["name"].endswith("Pro")]
     if phones:
