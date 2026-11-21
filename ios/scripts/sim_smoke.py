@@ -19,7 +19,13 @@ os.makedirs(OUT, exist_ok=True)
 
 def sh(*cmd, check=True, timeout=300):
     print("$", " ".join(cmd), flush=True)
-    r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        if check:
+            raise
+        print(f"(timed out after {timeout}s, carrying on)", flush=True)
+        return subprocess.CompletedProcess(cmd, 124, "", "")
     for stream in (r.stdout, r.stderr):
         if stream.strip():
             print(stream.strip()[-1500:], flush=True)
@@ -36,6 +42,9 @@ def runtime_version(key):
 devices = json.loads(sh("xcrun", "simctl", "list", "devices", "available", "-j").stdout)["devices"]
 pick = None
 for runtime in sorted((k for k in devices if "iOS" in k), key=runtime_version, reverse=True):
+    if runtime_version(runtime)[0] < 27:
+        print("skipping older runtime", runtime, flush=True)
+        continue
     phones = [d for d in devices[runtime] if d["name"].startswith("iPhone")]
     pros = [d for d in phones if d["name"].endswith("Pro")]
     if phones:
@@ -69,7 +78,7 @@ problems = []
 for name, args, wait in screens:
     if name == "07-feed-dark-mode":
         sh("xcrun", "simctl", "ui", udid, "appearance", "dark", check=False)
-    sh("xcrun", "simctl", "terminate", udid, BUNDLE, check=False)
+    sh("xcrun", "simctl", "terminate", udid, BUNDLE, check=False, timeout=30)
     sh("xcrun", "simctl", "launch", udid, BUNDLE, *args)
     time.sleep(wait)
     listing = sh("xcrun", "simctl", "spawn", udid, "launchctl", "list", check=False).stdout

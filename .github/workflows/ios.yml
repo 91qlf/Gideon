@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   ipa:
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -30,6 +30,7 @@ jobs:
           sudo xcode-select -s "$XC/Contents/Developer"
           xcodebuild -version
           xcodebuild -showsdks | grep -i iphoneos || true
+          xcodebuild -showsdks | grep -q "iphoneos27" || { echo "::error::No iOS 27 SDK on this runner"; exit 1; }
 
       - name: Generate the Xcode project
         working-directory: ios
@@ -77,12 +78,12 @@ jobs:
           make_latest: false
           files: ios/Gideon-iOS-1.0.${{ github.run_number }}.ipa
           body: |
-            Application iPhone native (SwiftUI, Liquid Glass sur iOS 26), non signée.
+            Application iPhone native (SwiftUI, Liquid Glass), compilée avec le SDK iOS 27, non signée.
             À installer avec AltStore, SideStore, Sideloadly ou un autre outil de sideload : il la signe avec ton identifiant Apple.
             iOS 18 minimum.
 
   simulator:
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
