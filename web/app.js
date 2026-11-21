@@ -8,6 +8,19 @@
     get(k, d) { try { const v = localStorage.getItem('gideon.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
     set(k, v) { try { localStorage.setItem('gideon.' + k, JSON.stringify(v)); } catch { /* private mode */ } },
   };
+  // Feed data comes from third-party RSS: only ever link or load http(s) URLs.
+  const safeUrl = u => {
+    const s = String(u ?? '').trim();
+    return /^https?:\/\//i.test(s) ? s : '';
+  };
+  // CSS background from a URL, with the characters that could end url('…') percent-encoded.
+  const bg = u => {
+    const s = safeUrl(u);
+    return s ? `background-image:url('${s.replace(/['"()\\\s]/g, c => (/['()]/.test(c) ? '%' + c.charCodeAt(0).toString(16) : encodeURIComponent(c)))}')` : '';
+  };
+  const cleanItem = it => it && typeof it.id === 'string' && typeof it.t === 'string' && safeUrl(it.l)
+    ? { ...it, l: safeUrl(it.l), i: safeUrl(it.i) || null, v: /^[\w-]{6,20}$/.test(it.v || '') ? it.v : null }
+    : null;
   const ic = (name, cls = '') => `<svg class="ic ${cls}"><use href="#i-${name}"/></svg>`;
   const favicon = d => `https://www.google.com/s2/favicons?domain=${encodeURIComponent(d || '')}&sz=128`;
   const CATS = {
@@ -33,7 +46,7 @@
   const S = {
     data: null, pubs: {}, kinds: {}, all: [], forYou: [], list: [], pending: null,
     screen: 'feed', lastTab: 'feed', query: '', feedTab: 'foryou', filter: null,
-    liked: new Set(store.get('liked', [])), saved: store.get('saved', []), disabled: new Set(store.get('disabled', [])),
+    liked: new Set(store.get('liked', [])), saved: store.get('saved', []).map(cleanItem).filter(Boolean), disabled: new Set(store.get('disabled', [])),
     shorts: store.get('shorts', false), sound: store.get('sound', false), scale: store.get('scale', 1),
     affinity: store.get('affinity', {}), rendered: 0, active: -1, reader: null,
   };
@@ -72,6 +85,7 @@
   }
 
   function apply(data) {
+    data = { ...data, items: data.items.map(cleanItem).filter(Boolean) };
     S.data = data;
     S.pubs = Object.fromEntries(data.publishers.map(p => [p.id, p]));
     S.kinds = {};
@@ -164,7 +178,7 @@
     const saved = isSaved(it.id);
     const img = esc(it.i || '');
     const media = it.v
-      ? `<div class="vbg" style="background-image:url('${img}')"></div><div class="vframe${it.sh ? ' short' : ''}" style="background-image:url('${img}')"><div class="yt"></div></div>`
+      ? `<div class="vbg" style="${esc(bg(it.i))}"></div><div class="vframe${it.sh ? ' short' : ''}" style="${esc(bg(it.i))}"><div class="yt"></div></div>`
       : it.i
         ? `<img class="hero" src="${img}" alt="" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">`
         : `<div class="hero-fallback"><img src="${favicon(pub.domain)}" alt=""></div>`;
@@ -481,7 +495,7 @@
     const pub = pubOf(it);
     return `<div class="story" data-id="${esc(it.id)}">
       <div class="txt"><div class="who"><img src="${favicon(pub.domain)}" alt="">${esc(pub.name)}</div><h3>${esc(it.t)}</h3><div class="when">${ago(it.d)}</div></div>
-      <div class="thumb" style="background-image:url('${esc(it.i || favicon(pub.domain))}')"></div>${extra}</div>`;
+      <div class="thumb" style="${esc(bg(it.i || favicon(pub.domain)))}"></div>${extra}</div>`;
   }
 
   function renderSearch() {
@@ -631,7 +645,7 @@
     scroller.scrollTop = 0;
     const hero = it.i ? `<img class="r-hero" src="${esc(it.i)}" alt="" referrerpolicy="no-referrer" onerror="this.outerHTML='<div class=r-spacer></div>'">` : '<div class="r-spacer"></div>';
     if (it.v) {
-      scroller.innerHTML = `<div class="r-spacer"></div><div class="r-video"><iframe src="https://www.youtube-nocookie.com/embed/${esc(it.v)}?playsinline=1&rel=0&modestbranding=1" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>${readerHead(it, null)}<div class="r-body"><p>${esc(it.s || '')}</p></div>${readerFoot(it)}`;
+      scroller.innerHTML = `<div class="r-spacer"></div><div class="r-video"><iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(it.v)}?playsinline=1&rel=0&modestbranding=1" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>${readerHead(it, null)}<div class="r-body"><p>${esc(it.s || '')}</p></div>${readerFoot(it)}`;
     } else {
       scroller.innerHTML = hero + readerHead(it, null) + `<div class="r-body skeleton">${'<i style="width:96%"></i><i></i><i style="width:88%"></i><i style="width:70%"></i><br>'.repeat(2)}</div>` + readerFoot(it);
     }
@@ -654,7 +668,7 @@
           if (b.t === 'h') return `<h3>${esc(b.x)}</h3>`;
           if (b.t === 'q') return `<blockquote>${esc(b.x)}</blockquote>`;
           if (b.t === 'li') return `<li>${esc(b.x)}</li>`;
-          if (b.t === 'img') return `<figure><img src="${esc(b.u)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.remove()">${b.x ? `<figcaption>${esc(b.x)}</figcaption>` : ''}</figure>`;
+          if (b.t === 'img' && safeUrl(b.u)) return `<figure><img src="${esc(safeUrl(b.u))}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.remove()">${b.x ? `<figcaption>${esc(b.x)}</figcaption>` : ''}</figure>`;
           return '';
         }).join('')
       : `<p>${esc(it.s || '')}</p>`;
@@ -663,15 +677,16 @@
       : art.truncated
         ? `<div class="r-card"><b>La suite est réservée aux abonnés de ${esc(pubOf(it).name)}.</b><a class="btn blue" href="${esc(it.l)}" target="_blank" rel="noopener">${ic('safari')}Continuer sur le site</a></div>`
         : '';
-    const heroUrl = it.i || art?.hero;
+    const heroUrl = it.i || safeUrl(art?.hero);
     const heroHtml = heroUrl ? `<img class="r-hero" src="${esc(heroUrl)}" alt="" referrerpolicy="no-referrer" onerror="this.outerHTML='<div class=r-spacer></div>'">` : '<div class="r-spacer"></div>';
     scroller.innerHTML = heroHtml + readerHead(it, art) + `<div class="r-body">${body}</div>` + card + readerFoot(it);
   }
 
+  let ignorePop = false;
   function closeReader(fromHistory) {
     if (!S.reader) return;
     S.reader = null;
-    if (fromHistory !== true && history.state?.sheet) history.back();
+    if (fromHistory !== true && history.state?.sheet) { ignorePop = true; history.back(); }
     document.body.classList.remove('sheet-open');
     sheetHost.setAttribute('aria-hidden', 'true');
     sheet.style.setProperty('--drag', '0px');
@@ -734,6 +749,7 @@
 
   // Back gesture / history: close the reader or the search first
   window.addEventListener('popstate', () => {
+    if (ignorePop) { ignorePop = false; return; }
     if (S.reader) closeReader(true);
     else if (S.screen === 'search') show(S.lastTab);
   });

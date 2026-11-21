@@ -46,6 +46,14 @@ def clean(text):
     return re.sub(r"\s+", " ", text).strip()
 
 
+def web_url(u):
+    """The URL if it is an absolute http(s) one (protocol-relative ones become https), else None."""
+    u = (u or "").strip()
+    if u.startswith("//"):
+        u = "https:" + u
+    return u if re.match(r"https?://", u, re.I) else None
+
+
 def md5(s):
     return hashlib.md5(s.encode("utf-8")).hexdigest()
 
@@ -89,7 +97,7 @@ def parse_feed(feed, pub):
     d = feedparser.parse(r.content)
     out = []
     for e in d.entries[: 15 if feed["kind"] == "youtube" else 25]:
-        link = e.get("link")
+        link = web_url(e.get("link"))
         title = clean(e.get("title"))
         if not link or not title:
             continue
@@ -109,7 +117,7 @@ def parse_feed(feed, pub):
             "t": title,
             "s": clean(summary),
             "l": link,
-            "i": image.replace("&amp;", "&") if image else None,
+            "i": web_url(image.replace("&amp;", "&")) if image else None,
             "p": pub["id"],
             "c": feed["category"],
             "k": feed["kind"],
@@ -191,9 +199,7 @@ def extract(item):
     if re.search(r'"isAccessibleForFree"\s*:\s*"?false', page, re.I) or chars < 700:
         truncated = True
     m = OG_IMAGE.search(page) or OG_IMAGE_REV.search(page)
-    hero = html.unescape(m.group(1)) if m else None
-    if hero and hero.startswith("//"):
-        hero = "https:" + hero
+    hero = web_url(html.unescape(m.group(1))) if m else None
     words = sum(len(b.get("x", "").split()) for b in blocks if b["t"] != "img")
     return {
         "title": root.get("title") or item["t"],
